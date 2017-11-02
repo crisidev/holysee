@@ -1,0 +1,12 @@
+debug = true
+
+[irc]
+nickname = "user"
+username = "username"
+real_name = "holysee bot"
+password = "password"
+host = "irc.freenode.net"
+port = "6697"
+channels = ["#example"]
+ssl = true
+ssl_verify = true

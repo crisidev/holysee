@@ -1,6 +1,11 @@
 [package]
 name = "holysee"
-version = "0.1.0"
+version = "0.0.1"
 authors = ["Bigo <bigo@crisidev.org>"]
 
 [dependencies]
+config = "0.6"
+serde = "1.0.17"
+serde_derive = "1.0.17"
+log = "0.3.8"
+pretty_env_logger = "0.1.1"
