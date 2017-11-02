@@ -31,9 +31,10 @@ use std::result::Result;
         }
 
         pub fn run(&self) {
-            self.server.identify();
+            self.server.identify().unwrap();
+            info!("Identify successfull");
             self.server.for_each_incoming(|message| {
                 info!("Got: {}", message);
-            });
+            }).unwrap();
         }
     }

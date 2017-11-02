@@ -10,7 +10,6 @@ mod settings;
 
 use settings::Settings;
 use std::process;
-use std::{thread, time};
 
 fn main() {
     pretty_env_logger::init().unwrap();
