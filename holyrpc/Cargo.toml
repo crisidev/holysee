@@ -1,6 +1,9 @@
 [package]
 name = "holyrpc"
-version = "0.1.0"
-authors = ["Bigo <bigo@crisidev.org>"]
+version = "0.0.1"
+authors = ["Bigo <bigo@crisidev.org>, Uovobw <uovobw@gmail.com"]
 
 [dependencies]
+log = "0.3.8"
+pretty_env_logger = "0.1.1"
+jsonrpc-core = "7.1.1"

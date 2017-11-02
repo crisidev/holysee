@@ -1,6 +1,9 @@
 [package]
 name = "holysee"
-version = "0.1.0"
-authors = ["Bigo <bigo@crisidev.org>"]
+version = "0.0.1"
+authors = ["Bigo <bigo@crisidev.org>, Uovobw <uovobw@gmail.com"]
 
 [dependencies]
+config = "0.6"
+log = "0.3.8"
+pretty_env_logger = "0.1.1"

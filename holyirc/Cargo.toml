@@ -1,7 +1,7 @@
 [package]
 name = "holyirc"
 version = "0.0.1"
-authors = ["Bigo <bigo@crisidev.org>"]
+authors = ["Bigo <bigo@crisidev.org>, Uovobw <uovobw@gmail.com"]
 
 [dependencies]
 config = "0.6"
