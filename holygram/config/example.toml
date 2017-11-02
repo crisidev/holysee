@@ -1,0 +1,5 @@
+debug = true
+
+[telegram]
+token = "apikey"
+chat_id = "012345"
