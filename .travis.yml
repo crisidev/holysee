@@ -1,7 +1,7 @@
 language: rust
 script:
-  - cargo build --verbose --all
-  - cargo test --verbose --all
+  - cargo build --verbose --all holysee
+  - cargo test --verbose --all holysee
 rust:
   - stable
   - beta
