@@ -10,7 +10,8 @@ Cargo.lock
 **/*.rs.bk
 
 # Useless IntelliJ data
-holysee/.idea/*
+*/.idea/*
+.idea/*
 
 # local configuration file
-holysee/config/local.toml
+*/config/local.toml
