@@ -42,18 +42,11 @@
 //}
 pub mod client {
     extern crate telegram_bot;
-    extern crate tokio_core;
 
-    use std::env;
-
-    use futures;
-    use futures::Stream;
-    use std::default::Default;
     use settings::Settings;
     use message::{Message, TransportType};
     use std::thread;
     use std::sync::mpsc::{Sender, channel};
-    use self::tokio_core::reactor::Core;
     use self::telegram_bot::*;
 
     pub fn new(settings: &Settings, to_int_sender_obj: Sender<Message>) -> Sender<Message> {
@@ -62,14 +55,12 @@ pub mod client {
         info!("Created telegram client");
         debug!("Running from configuration: {:?}", settings);
 
-        let sender_obj = to_int_sender_obj.clone();
-        let token = settings.telegram.token.clone();
-
         let api = Api::from_token(settings.telegram.token.as_ref()).unwrap();
         let api_clone = api.clone();
+
         thread::spawn(move || {
             let mut listener = api.listener(ListeningMethod::LongPoll(None));
-            let res = listener.listen(|u| {
+            listener.listen(|u| {
                 if let Some(m) = u.message {
                     let name = m.from.first_name + &*m.from.last_name
                         .map_or("".to_string(), |mut n| {
@@ -90,7 +81,7 @@ pub mod client {
                     };
                 }
                 Ok(ListeningAction::Continue)
-            });
+            })
         });
 
         let chat_id = settings.telegram.chat_id.clone();
