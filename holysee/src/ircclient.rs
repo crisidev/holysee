@@ -5,6 +5,7 @@ use self::irc::client::prelude::*;
 use settings::Settings;
 use error::IrcClientError;
 use std::result::Result;
+use std::sync::mpsc::Sender;
 
 pub struct IrcClient {
     server: IrcServer,
@@ -32,12 +33,24 @@ impl IrcClient {
         Ok(IrcClient { server: IrcServer::from_config(cfg).unwrap() })
     }
 
-    pub fn run(&self) {
+    pub fn run(&self, tx: Sender<String>) {
         self.server.identify().unwrap();
         info!("Identify successfull");
+        let thread_tx = tx.clone();
         self.server
             .for_each_incoming(|message| {
                 info!("Got: {}", message);
+                match thread_tx.send(message.to_string()) {
+                    Ok(_) => {
+                        info!("sent message");
+                        ()
+                    }
+                    Err(e) => {
+                        error!("send error: {:?}", e);
+                        ()
+                    }
+                }
+
             })
             .unwrap();
     }
