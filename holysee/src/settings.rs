@@ -14,9 +14,16 @@ pub struct Irc {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct Telegram {
+    pub token: String,
+    pub chat_id: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub debug: bool,
     pub irc: Irc,
+    pub telegram: Telegram,
 }
 
 impl Settings {

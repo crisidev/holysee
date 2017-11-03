@@ -1,5 +1,5 @@
 [package]
-name = "holyirc"
+name = "holysee"
 version = "0.0.1"
 authors = ["Bigo <bigo@crisidev.org>, Uovobw <uovobw@gmail.com"]
 
@@ -10,3 +10,6 @@ serde_derive = "1.0.17"
 log = "0.3.8"
 pretty_env_logger = "0.1.1"
 irc = "0.12.5"
+telebot = "0.1.1"
+tokio-core = "0.1.10"
+futures = "0.1.17"

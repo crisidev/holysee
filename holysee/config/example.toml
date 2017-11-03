@@ -9,4 +9,8 @@ host = "irc.freenode.net"
 port = "6697"
 channels = ["#example"]
 ssl = true
-ssl_verify = true
+ssl_verify = truedebug = true
+
+[telegram]
+token = "apikey"
+chat_id = "012345"
