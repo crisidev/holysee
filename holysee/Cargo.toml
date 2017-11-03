@@ -14,3 +14,5 @@ telebot = "0.1.1"
 tokio-core = "0.1.10"
 futures = "0.1.17"
 rand = "0.3.17"
+# leaving this commented out, change it to the correct one when merging
+#telegram-bot = { version = "0.5.0", path = "../vendor/telegram-bot/lib/" }
