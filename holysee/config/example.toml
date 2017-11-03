@@ -7,7 +7,7 @@ real_name = "holysee bot"
 password = "password"
 host = "irc.freenode.net"
 port = "6697"
-channels = ["#example"]
+channel = "#example"
 ssl = true
 ssl_verify = truedebug = true
 

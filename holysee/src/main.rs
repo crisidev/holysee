@@ -8,22 +8,21 @@ extern crate pretty_env_logger;
 extern crate telebot;
 extern crate tokio_core;
 extern crate futures;
+extern crate rand;
 
 mod ircclient;
+mod telegram;
 mod error;
 mod settings;
+mod message;
 
 use std::process;
-use std::thread;
-use telebot::bot;
-use tokio_core::reactor::Core;
-use futures::stream::Stream;
-use futures::Future;
 use settings::Settings;
+use message::{Message, TransportType};
+use rand::Rng;
 
-use telebot::functions::*;
 
-use std::sync::mpsc::{Sender, Receiver};
+use std::sync::mpsc::TryRecvError;
 use std::sync::mpsc;
 
 
@@ -38,38 +37,31 @@ fn main() {
         }
     };
 
-    let irc = match ircclient::IrcClient::new(&settings) {
-        Ok(s) => s,
-        Err(_) => {
-            error!("Error creating the irc client");
-            process::exit(1);
-        }
-    };
+    let (sender_for_irc, from_irc) = mpsc::channel::<Message>();
 
-    let (tx, rx) = mpsc::channel::<String>();
+    let irc = ircclient::client::new(&settings, sender_for_irc.clone());
 
-    // let mut lp = Core::new().unwrap();
-    // let bot = bot::RcBot::new(lp.handle(), settings.telegram.token.as_ref()).update_interval(200);
-    //
-    // let handle = bot.new_cmd("/reply").and_then(|(bot, msg)| {
-    //     let mut text = msg.text.unwrap().clone();
-    //     if text.is_empty() {
-    //         text = "<empty>".into();
-    //     }
-    //
-    //     bot.message(msg.chat.id, text).send()
-    // });
-    //
-    // bot.register(handle);
-
-    let irc_builder = thread::Builder::new().name("irc".into());
-    let irc_thread = irc_builder.spawn(move || irc.run(tx)).unwrap();
-
+    let mut diocane = 0;
+    let mut rng = rand::thread_rng();
     loop {
-        let message = rx.recv().unwrap();
-        info!("message on queue: {:?}", message);
-    }
+        diocane = diocane + 1;
+        match from_irc.try_recv() {
+            Ok(msg) => debug!("from irc: {}", msg.text),
+            Err(TryRecvError::Empty) => {
+            },
+            Err(TryRecvError::Disconnected) => {
+                error!("Channel disconnected!");
+            },
+        };
 
-    // bot.run(&mut lp).unwrap();
-    irc_thread.join().unwrap();
+        let doit = rng.gen_range(0.0, 1.0);
+        if  doit < 0.0000001 {
+            irc.send(Message {
+                from: String::from("telegram_user_sender"),
+                text: String::from(format!("generated_message: {}", doit)),
+                to: String::from("telegram_channel_name"),
+                transport: TransportType::Telegram,
+            }).unwrap();
+        }
+    }
 }

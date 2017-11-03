@@ -8,7 +8,7 @@ pub struct Irc {
     pub password: String,
     pub host: String,
     pub port: u16,
-    pub channels: Vec<String>,
+    pub channel: String,
     pub ssl: bool,
     pub ssl_verify: bool,
 }

@@ -1,18 +1,16 @@
-extern crate irc;
+pub mod client {
+    extern crate irc;
 
-use std::default::Default;
-use self::irc::client::prelude::*;
-use settings::Settings;
-use error::IrcClientError;
-use std::result::Result;
-use std::sync::mpsc::Sender;
+    use std::default::Default;
+    use self::irc::client::prelude::*;
+    use settings::Settings;
+    use message::{Message, TransportType};
+    use std::thread;
+    use std::sync::mpsc::{Sender, channel};
 
-pub struct IrcClient {
-    server: IrcServer,
-}
 
-impl IrcClient {
-    pub fn new(settings: &Settings) -> Result<Self, IrcClientError> {
+    pub fn new(settings: &Settings, to_int_sender_obj: Sender<Message>) -> Sender<Message> {
+        let (return_sender, from_int_reader) = channel::<Message>();
         let cfg = Config {
             nickname: Some(settings.irc.nickname.to_owned()),
             username: Some(settings.irc.username.to_owned()),
@@ -20,38 +18,48 @@ impl IrcClient {
             nick_password: Some(settings.irc.password.to_owned()),
             server: Some(settings.irc.host.to_owned()),
             port: Some(settings.irc.port.to_owned()),
-            channels: Some(settings.irc.channels.to_owned()),
+            channels: Some(vec!(settings.irc.channel.to_owned())),
             use_ssl: Some(settings.irc.ssl.to_owned()),
             ..Default::default()
         };
+        let channel_to_send = settings.irc.channel.clone();
         info!(
             "Created irc client for {}:{}",
             settings.irc.host,
             settings.irc.port
         );
         debug!("Running from configuration: {:?}", settings);
-        Ok(IrcClient { server: IrcServer::from_config(cfg).unwrap() })
-    }
-
-    pub fn run(&self, tx: Sender<String>) {
-        self.server.identify().unwrap();
-        info!("Identify successfull");
-        let thread_tx = tx.clone();
-        self.server
-            .for_each_incoming(|message| {
-                info!("Got: {}", message);
-                match thread_tx.send(message.to_string()) {
-                    Ok(_) => {
-                        info!("sent message");
-                        ()
-                    }
-                    Err(e) => {
-                        error!("send error: {:?}", e);
-                        ()
-                    }
-                }
-
+        let the_server = IrcServer::from_config(cfg).unwrap();
+        let the_server_clone = the_server.clone();
+        the_server.identify().unwrap();
+        thread::spawn(move || {
+            the_server_clone.for_each_incoming(|m| {
+                to_int_sender_obj.send(Message {
+                    transport: TransportType::IRC,
+                    from: m.source_nickname().unwrap_or("undefined").into(),
+                    to: String::from("-"),
+                    text: m.to_string(),
+                }).unwrap();
             })
-            .unwrap();
+        });
+
+        thread::spawn(move || {
+            loop {
+                match from_int_reader.recv() {
+                    Ok(msg) => match the_server.send_privmsg(&channel_to_send, msg.text.as_ref()) {
+                        Ok(_) => {
+                            info!("message sent");
+                        }
+                        Err(_) => {
+                            info!("could not send, server disconnected");
+                        }
+                    },
+                    Err(e) => {
+                        info!("Error reading from internal channel: {}", e);
+                    }
+                };
+            }
+        });
+        return_sender.clone()
     }
 }
