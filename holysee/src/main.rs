@@ -45,7 +45,7 @@ fn main() {
 
     loop {
         match from_irc.try_recv() {
-            Ok(msg) => {},
+            Ok(msg) => {tg.send(msg).unwrap()},
             Err(TryRecvError::Empty) => {}
             Err(TryRecvError::Disconnected) => {
                 error!("Channel disconnected!");
