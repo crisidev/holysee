@@ -16,7 +16,7 @@ pub struct Irc {
 #[derive(Debug, Deserialize)]
 pub struct Telegram {
     pub token: String,
-    pub chat_id: String,
+    pub chat_id: i64,
 }
 
 #[derive(Debug, Deserialize)]
