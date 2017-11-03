@@ -1,29 +1,29 @@
+all: devel
+release: holysee holygram holyirc holyrpc
 devel: holysee-devel holygram-devel holyirc-devel holyrpc-devel
 
-holysee-devel:
+holysee-devel: run
 	cd holysee; cargo build
 
-holygram-devel:
+holygram-devel: run
 	cd holygram; cargo build
 
-holyirc-devel:
+holyirc-devel: run
 	cd holyirc; cargo build
 
-holyrpc-devel:
+holyrpc-devel: run
 	cd holyrpc; cargo build
 
-release: holysee holygram holyirc holyrpc
-
-holysee:
+holysee: run
 	cd holysee; cargo build --release
 
-holygram:
+holygram: run
 	cd holygram; cargo build --release
 
-holyirc:
+holyirc: run
 	cd holyirc; cargo build --release
 
-holyrpc:
+holyrpc: run
 	cd holyrpc; cargo build --release
 
-all: devel
+.PHONY: run
