@@ -8,7 +8,6 @@ extern crate pretty_env_logger;
 
 extern crate tokio_core;
 extern crate futures;
-extern crate rand;
 
 mod ircclient;
 mod telegram;
@@ -18,8 +17,7 @@ mod message;
 
 use std::process;
 use settings::Settings;
-use message::{Message, TransportType};
-use rand::Rng;
+use message::{Message};
 
 
 use std::sync::mpsc::TryRecvError;
