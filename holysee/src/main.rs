@@ -1,3 +1,4 @@
+#![feature(mpsc_select)]
 #[macro_use]
 extern crate log;
 #[macro_use]
@@ -16,10 +17,9 @@ mod message;
 
 use std::process;
 use settings::Settings;
-use message::{Message};
+use message::Message;
 
-
-use std::sync::mpsc::TryRecvError;
+use std::sync::mpsc::RecvError;
 use std::sync::mpsc;
 
 
@@ -41,21 +41,24 @@ fn main() {
     let tg = telegram::client::new(&settings, sender_for_tg.clone());
 
     loop {
-        match from_irc.try_recv() {
-            Ok(msg) => {tg.send(msg).unwrap()},
-            Err(TryRecvError::Empty) => {}
-            Err(TryRecvError::Disconnected) => {
-                error!("Channel disconnected!");
+        select! {
+            irc_answer = from_irc.recv() => {
+                match irc_answer {
+                    Ok(msg) => {tg.send(msg).unwrap()},
+                    Err(RecvError) => {
+                        error!("Channel disconnected!");
+                    },
+                };
+            },
+            tg_answer = from_tg.recv() => {
+                match tg_answer {
+                    Ok(msg) => irc.send(msg).unwrap(),
+                    Err(RecvError) => {
+                        error!("Channel disconnected!");
+                    }
+                }
             }
-        };
-
-        match from_tg.try_recv() {
-            Ok(msg) => irc.send(msg).unwrap(),
-            Err(TryRecvError::Empty) => {}
-            Err(TryRecvError::Disconnected) => {
-                error!("Channel disconnected!");
-            }
-        };
+        }
     }
 }
 
