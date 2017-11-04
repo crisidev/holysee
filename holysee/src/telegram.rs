@@ -64,7 +64,7 @@ pub mod client {
             core.run(future)
         });
 
-        let chat_id = settings.telegram.chat_id.clone();
+        let chat_id = settings.telegram.chat_id;
         let token_clone = settings.telegram.token.clone();
 
         thread::spawn(move || {

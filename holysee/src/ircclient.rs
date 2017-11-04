@@ -38,24 +38,21 @@ pub mod client {
                     Some(x) => String::from(x),
                     None => String::from("undefined"),
                 };
-                match m.command {
-                    irc::proto::Command::PRIVMSG(source, message_text) => {
-                        debug!(
-                            "Incoming message source: {} message_text: {} srcnick: {}",
-                            source,
-                            message_text,
-                            srcnick
-                        );
-                        to_int_sender_obj
-                            .send(Message {
-                                transport: TransportType::IRC,
-                                from: srcnick,
-                                to: source,
-                                text: message_text,
-                            })
-                            .unwrap()
-                    }
-                    _ => {}
+                if let irc::proto::Command::PRIVMSG(source, message_text) = m.command {
+                    debug!(
+                        "Incoming message source: {} message_text: {} srcnick: {}",
+                        source,
+                        message_text,
+                        srcnick
+                    );
+                    to_int_sender_obj
+                        .send(Message {
+                            transport: TransportType::IRC,
+                            from: srcnick,
+                            to: source,
+                            text: message_text,
+                        })
+                        .unwrap()
                 }
             })
         });
@@ -64,14 +61,14 @@ pub mod client {
             match from_int_reader.recv() {
                 Ok(msg) => match the_server
                     .send_privmsg(&channel_to_send, &format!("{}: {}", msg.from, msg.text))
-                {
-                    Ok(_) => {
-                        info!("Message sent");
-                    }
-                    Err(_) => {
-                        info!("Could not send, server disconnected");
-                    }
-                },
+                    {
+                        Ok(_) => {
+                            info!("Message sent");
+                        }
+                        Err(_) => {
+                            info!("Could not send, server disconnected");
+                        }
+                    },
                 Err(e) => {
                     info!("Error reading from internal channel: {}", e);
                 }

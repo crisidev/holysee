@@ -1,4 +1,6 @@
 #![feature(mpsc_select)]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
 extern crate config;
 #[macro_use]
 extern crate log;
@@ -30,7 +32,7 @@ fn main() {
         Ok(s) => s,
         Err(_) => {
             error!("Error accessing config file");
-            process::exit(1);
+            process::exit(1)
         }
     };
 
