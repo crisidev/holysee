@@ -30,15 +30,18 @@ pub mod client {
         );
         debug!("Running from configuration: {:?}", settings);
         let the_server = IrcServer::from_config(cfg).unwrap();
-        let the_server_clone = the_server.clone();
         the_server.identify().unwrap();
+        let the_server_clone = the_server.clone();
+        let username_clone = settings.irc.username.clone();
+        let channel_clone = settings.irc.channel.clone();
         thread::spawn(move || {
             the_server_clone.for_each_incoming(|m| {
                 let srcnick = match m.source_nickname() {
                     Some(x) => String::from(x),
                     None => String::from("undefined"),
                 };
-                if let irc::proto::Command::PRIVMSG(source, message_text) = m.command {
+                match m.command {
+                    irc::proto::Command::PRIVMSG(source, message_text) => {
                     debug!(
                         "Incoming message source: {} message_text: {} srcnick: {}",
                         source,
@@ -53,6 +56,26 @@ pub mod client {
                             text: message_text,
                         })
                         .unwrap()
+                    },
+                    irc::proto::Command::INVITE(_, channel) => {
+                        debug!("got invite for channel: {}", channel);
+                        if channel == channel_clone {
+                            debug!("chosen to join channel {}", channel);
+                            the_server_clone.send_join(&channel).unwrap()
+                        }
+                    },
+                    irc::proto::Command::NOTICE(_, notice) => {
+                        debug!("NOTICE: {}", notice);
+                        debug!("DIO MERDA: {}", format!("You are now identified for {}", username_clone));
+                        if notice.contains("You are now identified for") {
+                            debug!("identified successfully for {}", username_clone);
+                            the_server_clone.send_join(&channel_clone).unwrap()
+                        }
+                    },
+                    irc::proto::Command::MOTD(_) => {},
+                    _ => {
+                        debug!("irc message:  {:#?}", m)
+                    }
                 }
             })
         });
