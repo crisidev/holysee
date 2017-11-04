@@ -11,3 +11,12 @@ matrix:
   allow_failures:
     - rust: stable
     - rust: beta
+
+notifications:
+  irc:
+    channels:
+      - "chat.freenode.net##altri"
+      - "chat.freenode.net##holysee"
+    on_success: change # default: always
+    on_failure: always # default: always
+    use_notice: true
