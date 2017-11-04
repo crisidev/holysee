@@ -8,9 +8,7 @@ pub struct Params<'a> {
 
 impl<'a> Params<'a> {
     pub fn new() -> Params<'a> {
-        Params {
-            gets: Vec::new(),
-        }
+        Params { gets: Vec::new() }
     }
 
     pub fn add_get_opt<T: ToString>(&mut self, key: &'a str, value: Option<T>) {
@@ -22,8 +20,7 @@ impl<'a> Params<'a> {
         self.gets.push((key, value.to_string()));
     }
 
-    pub fn add_get_json_opt<T: Encodable>(&mut self,
-                            key: &'a str, value: Option<T>) -> Result<()> {
+    pub fn add_get_json_opt<T: Encodable>(&mut self, key: &'a str, value: Option<T>) -> Result<()> {
         if let Some(d) = value {
             self.gets.push((key, try!(json::encode(&d))));
         }

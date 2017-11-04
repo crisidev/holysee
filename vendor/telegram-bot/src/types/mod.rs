@@ -10,7 +10,7 @@
 //! types. `None` values don't result in JSON fields.
 //!
 
-use rustc_serialize::{Decodable, Encodable, Decoder, Encoder};
+use rustc_serialize::{Decodable, Decoder, Encodable, Encoder};
 use std::convert::Into;
 use std::fmt;
 
@@ -100,22 +100,22 @@ impl Encodable for ReplyMarkup {
     fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
         match *self {
             ReplyMarkup::Keyboard(ref k) => k.encode(e),
-            ReplyMarkup::KeyboardHide(b) => {
-                e.emit_struct("ReplyKeyboardHide", 2, |e| {
-                    try!(e.emit_struct_field("hide_keyboard", 0, |e| {
-                        true.encode(e)
-                    }));
-                    e.emit_struct_field("selective", 1, |e| b.encode(e))
-                })
-            },
-            ReplyMarkup::ForceReply(b) => {
-                e.emit_struct("ForceReply", 2, |e| {
-                    try!(e.emit_struct_field("force_reply", 0, |e| {
-                        true.encode(e)
-                    }));
-                    e.emit_struct_field("selective", 1, |e| b.encode(e))
-                })
-            },
+            ReplyMarkup::KeyboardHide(b) => e.emit_struct("ReplyKeyboardHide", 2, |e| {
+                try!(e.emit_struct_field(
+                    "hide_keyboard",
+                    0,
+                    |e| { true.encode(e) }
+                ));
+                e.emit_struct_field("selective", 1, |e| b.encode(e))
+            }),
+            ReplyMarkup::ForceReply(b) => e.emit_struct("ForceReply", 2, |e| {
+                try!(e.emit_struct_field(
+                    "force_reply",
+                    0,
+                    |e| { true.encode(e) }
+                ));
+                e.emit_struct_field("selective", 1, |e| b.encode(e))
+            }),
         }
     }
 }
@@ -154,14 +154,14 @@ impl Decodable for ChatAction {
 impl Into<&'static str> for ChatAction {
     fn into(self) -> &'static str {
         match self {
-             ChatAction::Typing => "typing",
-             ChatAction::UploadPhoto => "upload_photo",
-             ChatAction::RecordVideo => "record_video",
-             ChatAction::UploadVideo => "upload_video",
-             ChatAction::RecordAudio => "record_audio",
-             ChatAction::UploadAudio => "upload_audio",
-             ChatAction::UploadDocument => "upload_document",
-             ChatAction::FindLocation => "find_location",
+            ChatAction::Typing => "typing",
+            ChatAction::UploadPhoto => "upload_photo",
+            ChatAction::RecordVideo => "record_video",
+            ChatAction::UploadVideo => "upload_video",
+            ChatAction::RecordAudio => "record_audio",
+            ChatAction::UploadAudio => "upload_audio",
+            ChatAction::UploadDocument => "upload_document",
+            ChatAction::FindLocation => "find_location",
         }
     }
 }
@@ -192,12 +192,12 @@ pub enum Chat {
     Group {
         id: Integer,
         title: String,
-        is_supergroup: bool
+        is_supergroup: bool,
     },
     Channel {
         id: Integer,
         title: String,
-        name: Option<String>
+        name: Option<String>,
     },
 }
 
@@ -213,33 +213,57 @@ impl Chat {
 
     /// Returns if the Chat is a User
     pub fn is_user(&self) -> bool {
-        if let &Chat::Private {..} = self { true } else { false }
+        if let &Chat::Private { .. } = self {
+            true
+        } else {
+            false
+        }
     }
 
     /// Returns if the Chat is a Group
     pub fn is_group(&self) -> bool {
-        if let &Chat::Group { is_supergroup, .. } = self { !is_supergroup } else { false }
+        if let &Chat::Group { is_supergroup, .. } = self {
+            !is_supergroup
+        } else {
+            false
+        }
     }
 
     /// Returns if the Chat is a SuperGroup
     pub fn is_supergroup(&self) -> bool {
-        if let &Chat::Group { is_supergroup, .. } = self { is_supergroup } else { false }
+        if let &Chat::Group { is_supergroup, .. } = self {
+            is_supergroup
+        } else {
+            false
+        }
     }
 
     /// Returns if the Chat is a Channel
     pub fn is_channel(&self) -> bool {
-        if let &Chat::Channel {..} = self { true } else { false }
+        if let &Chat::Channel { .. } = self {
+            true
+        } else {
+            false
+        }
     }
 
     pub fn to_user(&self) -> Option<User> {
-        if let &Chat::Private { id, ref first_name, ref last_name, ref username } = self {
+        if let &Chat::Private {
+            id,
+            ref first_name,
+            ref last_name,
+            ref username,
+        } = self
+        {
             Some(User {
                 id: id,
                 first_name: first_name.clone(),
                 last_name: last_name.clone(),
                 username: username.clone(),
             })
-        } else { None }
+        } else {
+            None
+        }
     }
 }
 
@@ -247,40 +271,32 @@ impl Decodable for Chat {
     fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
         d.read_struct("Chat", 0, |d| {
             // All kinds of chat have an 'id' and a 'type' fields
-            let id : Integer = try_field!(d, "id");
+            let id: Integer = try_field!(d, "id");
             let typ: String = try_field!(d, "type");
 
             match typ.as_ref() {
-                "private" => {
-                    Ok(Chat::Private {
-                        id: id,
-                        first_name: try_field!(d, "first_name"),
-                        last_name: try_field!(d, "last_name"),
-                        username: try_field!(d, "username"),
-                    })
-                }
-                "group" => {
-                    Ok(Chat::Group {
-                        id: id,
-                        title: try_field!(d, "title"),
-                        is_supergroup: false
-                    })
-                }
-                "supergroup" => {
-                    Ok(Chat::Group {
-                        id: id,
-                        title: try_field!(d, "title"),
-                        is_supergroup: true
-                    })
-                }
-                "channel" => {
-                    Ok(Chat::Channel {
-                        id: id,
-                        title: try_field!(d, "title"),
-                        name: try_field!(d, "username"),
-                    })
-                }
-                _ => Err(d.error(&format!("Invalid chat type: {}", typ)))
+                "private" => Ok(Chat::Private {
+                    id: id,
+                    first_name: try_field!(d, "first_name"),
+                    last_name: try_field!(d, "last_name"),
+                    username: try_field!(d, "username"),
+                }),
+                "group" => Ok(Chat::Group {
+                    id: id,
+                    title: try_field!(d, "title"),
+                    is_supergroup: false,
+                }),
+                "supergroup" => Ok(Chat::Group {
+                    id: id,
+                    title: try_field!(d, "title"),
+                    is_supergroup: true,
+                }),
+                "channel" => Ok(Chat::Channel {
+                    id: id,
+                    title: try_field!(d, "title"),
+                    name: try_field!(d, "username"),
+                }),
+                _ => Err(d.error(&format!("Invalid chat type: {}", typ))),
             }
         })
     }
@@ -288,57 +304,51 @@ impl Decodable for Chat {
 
 impl Encodable for Chat {
     fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
-
         match self {
-            &Chat::Private { id, ref first_name, ref last_name, ref username } => {
-                e.emit_struct("Chat", 5, |e| {
-                    try!(e.emit_struct_field("id", 0, |e| {
-                        id.encode(e)
-                    }));
-                    try!(e.emit_struct_field("type", 1, |e| {
-                        "private".encode(e)
-                    }));
-                    try!(e.emit_struct_field("first_name", 2, |e| {
-                        first_name.encode(e)
-                    }));
-                    try!(e.emit_struct_field("last_name", 3, |e| {
-                        last_name.encode(e)
-                    }));
-                    try!(e.emit_struct_field("type", 4, |e| {
-                        username.encode(e)
-                    }));
-                    Ok(())
-                })
-            },
-            &Chat::Group { id, ref title, is_supergroup} => {
-                e.emit_struct("Chat", 3, |e| {
-                    try!(e.emit_struct_field("id", 0, |e| {
-                        id.encode(e)
-                    }));
-                    try!(e.emit_struct_field("type", 1, |e| {
-                        let typ = if is_supergroup { "supergroup" } else { "group" };
-                        typ.encode(e)
-                    }));
-                    try!(e.emit_struct_field("title", 2, |e| {
-                        title.encode(e)
-                    }));
-                    Ok(())
-                })
-            },
-            &Chat::Channel { id, ref title, ref name} => {
-                e.emit_struct("Channel", 3, |e| {
-                    try!(e.emit_struct_field("id", 0, |e| {
-                        id.encode(e)
-                    }));
-                    try!(e.emit_struct_field("title", 1, |e| {
-                        title.encode(e)
-                    }));
-                    try!(e.emit_struct_field("username", 2, |e| {
-                        name.encode(e)
-                    }));
-                    Ok(())
-                })
-            },
+            &Chat::Private {
+                id,
+                ref first_name,
+                ref last_name,
+                ref username,
+            } => e.emit_struct("Chat", 5, |e| {
+                try!(e.emit_struct_field("id", 0, |e| { id.encode(e) }));
+                try!(e.emit_struct_field("type", 1, |e| { "private".encode(e) }));
+                try!(e.emit_struct_field(
+                    "first_name",
+                    2,
+                    |e| { first_name.encode(e) }
+                ));
+                try!(e.emit_struct_field(
+                    "last_name",
+                    3,
+                    |e| { last_name.encode(e) }
+                ));
+                try!(e.emit_struct_field("type", 4, |e| { username.encode(e) }));
+                Ok(())
+            }),
+            &Chat::Group {
+                id,
+                ref title,
+                is_supergroup,
+            } => e.emit_struct("Chat", 3, |e| {
+                try!(e.emit_struct_field("id", 0, |e| { id.encode(e) }));
+                try!(e.emit_struct_field("type", 1, |e| {
+                    let typ = if is_supergroup { "supergroup" } else { "group" };
+                    typ.encode(e)
+                }));
+                try!(e.emit_struct_field("title", 2, |e| { title.encode(e) }));
+                Ok(())
+            }),
+            &Chat::Channel {
+                id,
+                ref title,
+                ref name,
+            } => e.emit_struct("Channel", 3, |e| {
+                try!(e.emit_struct_field("id", 0, |e| { id.encode(e) }));
+                try!(e.emit_struct_field("title", 1, |e| { title.encode(e) }));
+                try!(e.emit_struct_field("username", 2, |e| { name.encode(e) }));
+                Ok(())
+            }),
         }
     }
 }
@@ -365,8 +375,10 @@ pub struct Message {
 impl Decodable for Message {
     fn decode<D: Decoder>(d: &mut D) -> Result<Self, D::Error> {
         d.read_struct("Message", 0, |d| {
-            let maybe_forward_from = try!(d.read_struct_field("forward_from", 0, Decodable::decode));
-            let maybe_forward_date = try!(d.read_struct_field("forward_date", 0, Decodable::decode));
+            let maybe_forward_from =
+                try!(d.read_struct_field("forward_from", 0, Decodable::decode));
+            let maybe_forward_date =
+                try!(d.read_struct_field("forward_date", 0, Decodable::decode));
             let maybe_forward = match (maybe_forward_from, maybe_forward_date) {
                 (Some(from), Some(date)) => Some((from, date)),
                 _ => None,
@@ -441,24 +453,38 @@ impl Decodable for MessageType {
 
         // Message types without additional data
         if let Some(true) = try!(d.read_struct_field(
-            "delete_chat_photo", 0, Decodable::decode)) {
+            "delete_chat_photo",
+            0,
+            Decodable::decode
+        )) {
             return Ok(MessageType::DeleteChatPhoto);
         };
         if let Some(true) = try!(d.read_struct_field(
-            "group_chat_created", 0, Decodable::decode)) {
+            "group_chat_created",
+            0,
+            Decodable::decode
+        )) {
             return Ok(MessageType::GroupChatCreated);
         };
 
         if let Some(true) = try!(d.read_struct_field(
-            "supergroup_chat_created", 0, Decodable::decode)) {
-            return Ok(MessageType::SuperGroupChatCreated(GroupToSuperGroupMigration {
-                from: try_field!(d, "migrate_from_chat_id"),
-                to: try_field!(d, "migrate_to_chat_id"),
-            }))
+            "supergroup_chat_created",
+            0,
+            Decodable::decode
+        )) {
+            return Ok(MessageType::SuperGroupChatCreated(
+                GroupToSuperGroupMigration {
+                    from: try_field!(d, "migrate_from_chat_id"),
+                    to: try_field!(d, "migrate_to_chat_id"),
+                },
+            ));
         };
 
         if let Some(true) = try!(d.read_struct_field(
-            "channel_chat_created", 0, Decodable::decode)) {
+            "channel_chat_created",
+            0,
+            Decodable::decode
+        )) {
             return Ok(MessageType::ChannelChatCreated);
         };
 
@@ -486,10 +512,14 @@ pub enum ParseMode {
 
 impl fmt::Display for ParseMode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", match *self {
-            ParseMode::Markdown => "Markdown",
-            ParseMode::Html => "HTML",
-        })
+        write!(
+            f,
+            "{}",
+            match *self {
+                ParseMode::Markdown => "Markdown",
+                ParseMode::Html => "HTML",
+            }
+        )
     }
 }
 
@@ -629,7 +659,7 @@ pub struct Location {
 #[derive(RustcDecodable, Debug, PartialEq, Clone)]
 pub struct Update {
     pub update_id: Integer,
-    pub message: Option<Message>
+    pub message: Option<Message>,
 }
 
 // impl_encode!(Update, 2,

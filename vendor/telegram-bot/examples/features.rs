@@ -12,15 +12,20 @@ fn main() {
 
     // Just to demonstrate this method. Sadly, a server listening for updates
     // is not (yet!) integrated in this library.
-    println!("Webhook: {:?}", api.set_webhook(Some("https://example.com")));
+    println!(
+        "Webhook: {:?}",
+        api.set_webhook(Some("https://example.com"))
+    );
     println!("Webhook: {:?}", api.set_webhook::<&str>(None));
 
     // Fetch new updates via long poll method
     let res = listener.listen(|u| {
         // If the received update contains a message...
         if let Some(m) = u.message {
-            let name = m.from.first_name + &*m.from.last_name
-                .map_or("".to_string(), |mut n| { n.insert(0, ' '); n });
+            let name = m.from.first_name + &*m.from.last_name.map_or("".to_string(), |mut n| {
+                n.insert(0, ' ');
+                n
+            });
             let chat_id = m.chat.id();
 
             // Match message type
@@ -31,23 +36,24 @@ fn main() {
 
                     // Define one time response keyboard
                     let keyboard = ReplyKeyboardMarkup {
-                        keyboard: vec![vec![t],
-                                       vec!["Yes".into(), "No".into()]],
-                       one_time_keyboard: Some(true),
-                        .. Default::default()
+                        keyboard: vec![vec![t], vec!["Yes".into(), "No".into()]],
+                        one_time_keyboard: Some(true),
+                        ..Default::default()
                     };
 
                     // Reply with custom Keyboard
                     try!(api.send_message(
                         chat_id,
                         format!("Hi, {}!", name),
-                        None, None, None, Some(keyboard.into())));
-
-                },
+                        None,
+                        None,
+                        None,
+                        Some(keyboard.into())
+                    ));
+                }
                 MessageType::Location(loc) => {
                     // Print event
-                    println!("<{}> is here: {}", name,
-                        json::encode(&loc).unwrap());
+                    println!("<{}> is here: {}", name, json::encode(&loc).unwrap());
 
                     // Send chat action (this is useless here, it's just for
                     // demonstration purposes)
@@ -63,18 +69,16 @@ fn main() {
                     };
 
                     try!(api.send_location(chat_id, lat, lng, None, None));
-                },
+                }
                 MessageType::Contact(c) => {
                     // Print event
-                    println!("<{}> send a contact: {}", name,
-                        json::encode(&c).unwrap());
+                    println!("<{}> send a contact: {}", name, json::encode(&c).unwrap());
 
                     // Just forward the contact back to the sender...
                     try!(api.forward_message(chat_id, chat_id, m.message_id));
                 }
                 _ => {}
             }
-
         }
         Ok(ListeningAction::Continue)
     });
