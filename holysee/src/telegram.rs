@@ -42,12 +42,18 @@
 //}
 pub mod client {
     extern crate telegram_bot;
+    extern crate tokio_core;
+    extern crate futures;
 
+    use self::futures::Stream;
     use settings::Settings;
     use message::{Message, TransportType};
     use std::thread;
     use std::sync::mpsc::{Sender, channel};
-    use self::telegram_bot::*;
+    use self::telegram_bot::Api;
+    use self::telegram_bot::types::{UpdateKind, MessageKind, ChatId};
+    use self::tokio_core::reactor::Core;
+    use self::telegram_bot::CanSendMessage;
 
     pub fn new(settings: &Settings, to_int_sender_obj: Sender<Message>) -> Sender<Message> {
         let (return_sender, from_int_reader) = channel::<Message>();
@@ -55,54 +61,51 @@ pub mod client {
         info!("Created telegram client");
         debug!("Running from configuration: {:?}", settings);
 
-        let api = Api::from_token(settings.telegram.token.as_ref()).unwrap();
-        let api_clone = api.clone();
+        let token = settings.telegram.token.clone();
 
         thread::spawn(move || {
-            let mut listener = api.listener(ListeningMethod::LongPoll(None));
-            listener.listen(|u| {
-                if let Some(m) = u.message {
-                    let name = m.from.first_name + &*m.from.last_name
-                        .map_or("".to_string(), |mut n| {
-                            n.insert(0, ' ');
-                            n
-                        });
-                    let chat_id = m.chat.id();
-                    match m.msg {
-                        MessageType::Text(t) => {
-                            to_int_sender_obj.send(Message {
-                                transport: TransportType::Telegram,
-                                from: name,
-                                to: format!("{}", chat_id),
-                                text: t,
-                            }).unwrap();
+            let core = Core::new().unwrap();
+            let api = Api::configure(&token).build(core.handle());
+            let future = api.stream().for_each(|update| {
+                match update.kind {
+                    UpdateKind::Message(m) => {
+                        match m.kind {
+                            MessageKind::Text{data,entities} => {
+                                to_int_sender_obj.send(Message {
+                                    transport: TransportType::Telegram,
+                                    from: m.from.unwrap().username.unwrap(),
+                                    to: String::from("-"),
+                                    text: data,
+                                }).unwrap()
+                            },
+                            _ => {
+                                info!("messageKind != text");
+                            },
                         }
-                        _ => {}
-                    };
-                }
-                Ok(ListeningAction::Continue)
-            })
+                    }
+                    _ => {
+                        info!("UpdateKind != messate");
+                    },
+                };
+                Ok(())
+            });
         });
 
         let chat_id = settings.telegram.chat_id.clone();
+        let token_clone = settings.telegram.token.clone();
 
         thread::spawn(move || {
+            let core = Core::new().unwrap();
+            let api = Api::configure(&token_clone).build(core.handle());
             loop {
                 match from_int_reader.recv() {
-                    Ok(msg) => match api_clone.send_message(
-                        chat_id,
-                        msg.text,
-                        None, None, None, None) {
-                        Ok(_) => {
-                            info!("message sent");
-                        }
-                        Err(_) => {
-                            info!("could not send, server disconnected");
-                        }
+                    Ok(msg) => {
+                        let chat = ChatId::new(chat_id);
+                        api.spawn(chat.text(msg.text));
                     },
                     Err(e) => {
                         info!("Error reading from internal channel: {}", e);
-                    }
+                    },
                 };
             }
         });

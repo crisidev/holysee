@@ -34,16 +34,23 @@ pub mod client {
         the_server.identify().unwrap();
         thread::spawn(move || {
             the_server_clone.for_each_incoming(|m| {
-                match m.command {
-                    irc::proto::Command::PRIVMSG(source, message_text) =>
-                        to_int_sender_obj.send(Message {
-                            transport: TransportType::IRC,
-                            from: source,
-                            to: String::from("-"),
-                            text: message_text,
-                        }).unwrap(),
-                    _ => {},
-                }
+//                match m.command {
+//                    irc::proto::Command::PRIVMSG(source, message_text) =>
+//                        to_int_sender_obj.send(Message {
+//                            transport: TransportType::IRC,
+//                            from: source,
+//                            to: String::from("-"),
+//                            text: message_text,
+//                        }).unwrap(),
+//                    _ => {},
+//                }
+                to_int_sender_obj.send(Message {
+                                                transport: TransportType::IRC,
+                                                from: source,
+                                                to: String::from("-"),
+                                                text: m.command,
+                                            }).unwrap(),
+
             })
         });
 
