@@ -1,0 +1,18 @@
+language: rust
+rust:
+  - stable
+  - beta
+  - nightly
+
+script:
+  - cargo build --verbose -p telegram-bot-raw
+  - cargo test --verbose -p telegram-bot-raw
+  - cargo build --verbose -p telegram-bot
+  - cargo test --verbose -p telegram-bot
+
+after_success:
+  - |
+        test ${TRAVIS_PULL_REQUEST} == "false" && \
+        test ${TRAVIS_BRANCH} == "master" && \
+        test "${TRAVIS_BUILD_NUMBER}.1" == "${TRAVIS_JOB_NUMBER}" && \
+        bash deploy.sh
