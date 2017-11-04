@@ -6,7 +6,7 @@ pub mod client {
     use settings::Settings;
     use message::{Message, TransportType};
     use std::thread;
-    use std::sync::mpsc::{Sender, channel};
+    use std::sync::mpsc::{channel, Sender};
 
 
     pub fn new(settings: &Settings, to_int_sender_obj: Sender<Message>) -> Sender<Message> {
@@ -18,7 +18,7 @@ pub mod client {
             nick_password: Some(settings.irc.password.to_owned()),
             server: Some(settings.irc.host.to_owned()),
             port: Some(settings.irc.port.to_owned()),
-            channels: Some(vec!(settings.irc.channel.to_owned())),
+            channels: Some(vec![settings.irc.channel.to_owned()]),
             use_ssl: Some(settings.irc.ssl.to_owned()),
             ..Default::default()
         };
@@ -40,35 +40,42 @@ pub mod client {
                 };
                 match m.command {
                     irc::proto::Command::PRIVMSG(source, message_text) => {
-                        debug!("Incoming message source: {} message_text: {} srcnick: {}", source, message_text, srcnick);
-                        to_int_sender_obj.send(Message {
-                            transport: TransportType::IRC,
-                            from: srcnick,
-                            to: source,
-                            text: message_text,
-                        }).unwrap()
+                        debug!(
+                            "Incoming message source: {} message_text: {} srcnick: {}",
+                            source,
+                            message_text,
+                            srcnick
+                        );
+                        to_int_sender_obj
+                            .send(Message {
+                                transport: TransportType::IRC,
+                                from: srcnick,
+                                to: source,
+                                text: message_text,
+                            })
+                            .unwrap()
                     }
                     _ => {}
                 }
             })
         });
 
-        thread::spawn(move || {
-            loop {
-                match from_int_reader.recv() {
-                    Ok(msg) => match the_server.send_privmsg(&channel_to_send, &format!("{}: {}", msg.from, msg.text)) {
-                        Ok(_) => {
-                            info!("Message sent");
-                        }
-                        Err(_) => {
-                            info!("Could not send, server disconnected");
-                        }
-                    },
-                    Err(e) => {
-                        info!("Error reading from internal channel: {}", e);
+        thread::spawn(move || loop {
+            match from_int_reader.recv() {
+                Ok(msg) => match the_server
+                    .send_privmsg(&channel_to_send, &format!("{}: {}", msg.from, msg.text))
+                {
+                    Ok(_) => {
+                        info!("Message sent");
                     }
-                };
-            }
+                    Err(_) => {
+                        info!("Could not send, server disconnected");
+                    }
+                },
+                Err(e) => {
+                    info!("Error reading from internal channel: {}", e);
+                }
+            };
         });
         return_sender.clone()
     }

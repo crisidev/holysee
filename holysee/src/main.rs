@@ -1,14 +1,14 @@
 #![feature(mpsc_select)]
+extern crate config;
 #[macro_use]
 extern crate log;
+extern crate pretty_env_logger;
+extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-extern crate serde;
-extern crate config;
-extern crate pretty_env_logger;
 
-extern crate tokio_core;
 extern crate futures;
+extern crate tokio_core;
 
 mod ircclient;
 mod telegram;
@@ -62,4 +62,3 @@ fn main() {
         }
     }
 }
-

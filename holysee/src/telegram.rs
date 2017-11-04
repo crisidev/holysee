@@ -1,15 +1,15 @@
 pub mod client {
+    extern crate futures;
     extern crate telegram_bot;
     extern crate tokio_core;
-    extern crate futures;
 
     use self::futures::Stream;
     use settings::Settings;
     use message::{Message, TransportType};
     use std::thread;
-    use std::sync::mpsc::{Sender, channel};
+    use std::sync::mpsc::{channel, Sender};
     use self::telegram_bot::Api;
-    use self::telegram_bot::types::{UpdateKind, MessageKind, ChatId, SendMessage};
+    use self::telegram_bot::types::{ChatId, MessageKind, SendMessage, UpdateKind};
     use self::tokio_core::reactor::Core;
 
     pub fn new(settings: &Settings, to_int_sender_obj: Sender<Message>) -> Sender<Message> {
@@ -26,32 +26,35 @@ pub mod client {
             let api = Api::configure(&token).build(core.handle());
             let future = api.stream().for_each(|update| {
                 match update.kind {
-                    UpdateKind::Message(m) => {
-                        match m.kind {
-                            MessageKind::Text { data, entities } => {
-                                let from: String = m.from.clone().and_then(|u| {
+                    UpdateKind::Message(m) => match m.kind {
+                        MessageKind::Text { data, entities } => {
+                            let from: String = m.from
+                                .clone()
+                                .and_then(|u| {
                                     u.username.clone().or_else(|| {
-                                        u.last_name.clone().and_then(|ln| {
-                                            Some(format!("{:?} {:?}", u.first_name, ln))
-                                        }).or_else(|| {
-                                            Some(u.first_name.clone())
-                                        })
-                                    }
-                                    )
-                                }).unwrap_or(String::from("unset"));
-                                debug!("entities: {:#?} from: {}", entities, from);
-                                to_int_sender_obj.send(Message {
+                                        u.last_name
+                                            .clone()
+                                            .and_then(
+                                                |ln| Some(format!("{:?} {:?}", u.first_name, ln)),
+                                            )
+                                            .or_else(|| Some(u.first_name.clone()))
+                                    })
+                                })
+                                .unwrap_or(String::from("unset"));
+                            debug!("entities: {:#?} from: {}", entities, from);
+                            to_int_sender_obj
+                                .send(Message {
                                     transport: TransportType::Telegram,
                                     from: from,
                                     to: String::from("-"),
                                     text: data,
-                                }).unwrap()
-                            }
-                            _ => {
-                                debug!("messageKind != text");
-                            }
+                                })
+                                .unwrap()
                         }
-                    }
+                        _ => {
+                            debug!("messageKind != text");
+                        }
+                    },
                     _ => {
                         debug!("UpdateKind != messate");
                     }
@@ -71,7 +74,10 @@ pub mod client {
             loop {
                 match from_int_reader.recv() {
                     Ok(msg) => {
-                        core.run(api.send(SendMessage::new(chat, format!("{}: {}", msg.from, msg.text)))).unwrap();
+                        core.run(api.send(SendMessage::new(
+                            chat,
+                            format!("{}: {}", msg.from, msg.text),
+                        ))).unwrap();
                     }
                     Err(e) => {
                         info!("Error reading from internal channel: {}", e);
