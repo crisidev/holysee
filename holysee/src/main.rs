@@ -40,14 +40,14 @@ fn main() {
     let (sender_for_tg, from_tg) = mpsc::channel::<Message>();
 
     let irc = ircclient::client::new(&settings, sender_for_irc.clone());
-    let tg = telegram::client::new(&settings, sender_for_tg.clone());
+    let tg = telegram::client::TelegramClient::new(&settings, sender_for_tg.clone());
 
     info!("Starting up");
     loop {
         select! {
             irc_answer = from_irc.recv() => {
                 match irc_answer {
-                    Ok(msg) => {tg.send(msg).unwrap()},
+                    Ok(msg) => {tg.writer.send(msg).unwrap()},
                     Err(RecvError) => {
                         error!("Channel disconnected!");
                     },
