@@ -40,6 +40,7 @@ fn main() {
     let irc = ircclient::client::new(&settings, sender_for_irc.clone());
     let tg = telegram::client::new(&settings, sender_for_tg.clone());
 
+    info!("Starting up");
     loop {
         select! {
             irc_answer = from_irc.recv() => {

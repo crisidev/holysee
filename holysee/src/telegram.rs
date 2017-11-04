@@ -20,6 +20,7 @@ pub mod client {
 
         let token = settings.telegram.token.clone();
 
+
         thread::spawn(move || {
             let mut core = Core::new().unwrap();
             let api = Api::configure(&token).build(core.handle());
@@ -53,12 +54,12 @@ pub mod client {
                                 }).unwrap()
                             },
                             _ => {
-                                info!("messageKind != text");
+                                debug!("messageKind != text");
                             },
                         }
                     }
                     _ => {
-                        info!("UpdateKind != messate");
+                        debug!("UpdateKind != messate");
                     },
                 }
                 Ok(())

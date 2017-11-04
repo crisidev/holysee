@@ -40,7 +40,7 @@ pub mod client {
                 };
                 match m.command {
                     irc::proto::Command::PRIVMSG(source, message_text) => {
-                        debug!("source: {} message_text: {} srcnick: {}", source, message_text, srcnick);
+                        debug!("Incoming message source: {} message_text: {} srcnick: {}", source, message_text, srcnick);
                         to_int_sender_obj.send(Message {
                             transport: TransportType::IRC,
                             from: srcnick,
@@ -58,10 +58,10 @@ pub mod client {
                 match from_int_reader.recv() {
                     Ok(msg) => match the_server.send_privmsg(&channel_to_send, &format!("{}: {}", msg.from, msg.text)) {
                         Ok(_) => {
-                            info!("message sent");
+                            info!("Message sent");
                         }
                         Err(_) => {
-                            info!("could not send, server disconnected");
+                            info!("Could not send, server disconnected");
                         }
                     },
                     Err(e) => {
