@@ -68,6 +68,7 @@ pub use types::*;
 pub use error::*;
 use util::Params;
 
+use std::str::FromStr;
 use rustc_serialize::{json, Decodable};
 use std::env;
 use std::fs;
@@ -75,10 +76,8 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 use std::thread;
-use hyper::{Client, Url};
-use hyper::client::IntoUrl;
-use hyper::client::request::Request;
-use hyper::method::Method;
+use hyper::{Client, Uri, Body, Request, Method};
+use hyper::client::HttpConnector;
 use hyper::header::{Connection, ContentType, ContentLength};
 use multipart::client::Multipart;
 
@@ -104,15 +103,15 @@ enum SendPath {
 /// directly to a telegram API call and are named like the API method, but in
 /// `camel_case`.
 pub struct Api {
-    url: Url,
-    client: Client,
+    url: Uri,
+    client: Client<HttpConnector, Body>,
 }
 
 impl Clone for Api {
     fn clone(&self) -> Api {
         Api {
             url: self.url.clone(),
-            client: Client::new(),
+            client: self.client.clone(),
         }
     }
 }
@@ -127,10 +126,7 @@ impl Api {
     /// is a valid Telegram token. You can call `get_me` to execute a test
     /// request.
     pub fn from_token(token: &str) -> Result<Api> {
-        let url = match Url::parse(&format!("{}{}/dummy", API_URL, token)) {
-            Ok(url) => url,
-            Err(e) => return Err(Error::InvalidTokenFormat(e)),
-        };
+        let url = Uri::from_str(&format!("{}{}/dummy", API_URL, token)).unwrap();
         Ok(Api {
             url: url,
             client: Client::new(),
@@ -375,16 +371,16 @@ impl Api {
     /// This library does not yet offer the feature to listen via webhook. This
     /// is just the raw telegram API request and will do nothing more. Use only
     /// if you know what you're doing.
-    pub fn set_webhook<U: IntoUrl>(&self, url: Option<U>) -> Result<bool> {
-        let u = url.map_or("".into(), |u| u.into_url().unwrap().to_string());
-
-        // Prepare parameters
-        let mut params = Params::new();
-        params.add_get("url", u);
-
-        // Execute request
-        self.send_request("setWebhook", params, RequestType::Post)
-    }
+//    pub fn set_webhook<U: Uri>(&self, url: Option<U>) -> Result<bool> {
+//        let u = url.map_or("".into(), |u| u.into_url().unwrap().to_string());
+//
+//        // Prepare parameters
+//        let mut params = Params::new();
+//        params.add_get("url", u);
+//
+//        // Execute request
+//        self.send_request("setWebhook", params, RequestType::Post)
+//    }
 
     // =======================================================================
     // Methods for receiving updates
@@ -457,7 +453,7 @@ impl Api {
         Self::request(&self.client, &self.url, method, p, typ)
     }
 
-    fn request<T: Decodable>(client: &Client, url: &Url,
+    fn request<T: Decodable>(client: &Client<HttpConnector, Body>, url: &Uri,
                              method: &str, p: Params, typ: RequestType) -> Result<T> {
         match typ {
             RequestType::Post => Self::post_request(client, url, method, p),
@@ -465,7 +461,7 @@ impl Api {
         }
     }
 
-    fn multipart_request<T: Decodable>(url: &Url, method: &str,
+    fn multipart_request<T: Decodable>(url: &Uri, method: &str,
                                        p: Params, file: SendPath) -> Result<T> {
         // Prepare URL for request: Clone and change the last path fragment
         // to the method name and append GET parameters.
@@ -517,7 +513,7 @@ impl Api {
         }
     }
 
-    fn post_request<T: Decodable>(client: &Client, url: &Url,
+    fn post_request<T: Decodable>(client: &Client<HttpConnector, Body>, url: &Uri,
                                   method: &str, p: Params) -> Result<T> {
         // Prepare URL for request: Clone and change the last path fragment
         // to the method name and append GET parameters.
@@ -593,8 +589,8 @@ pub enum ListeningAction {
 pub struct Listener {
     method: ListeningMethod,
     confirmed: Integer,
-    url: Url,
-    client: Client,
+    url: Uri,
+    client: Client<HttpConnector, Body>,
 }
 
 
