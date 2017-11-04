@@ -28,9 +28,26 @@ pub mod client {
                     UpdateKind::Message(m) => {
                         match m.kind {
                             MessageKind::Text{data,entities} => {
+                                let from: String = match m.from {
+                                    Some(u) => {
+                                        match u.username {
+                                            Some(username) => username,
+                                            None => {
+                                                match u.last_name {
+                                                    Some(last_name) => {
+                                                        format!("{} {}", u.first_name, last_name)
+                                                    },
+                                                    None => u.first_name
+                                                }
+                                            }
+                                        }
+                                    },
+                                    None => String::from("unset"),
+                                };
+                                debug!("entities: {:#?} from: {}", entities, from);
                                 to_int_sender_obj.send(Message {
                                     transport: TransportType::Telegram,
-                                    from: m.from.unwrap().username.unwrap(),
+                                    from: from,
                                     to: String::from("-"),
                                     text: data,
                                 }).unwrap()

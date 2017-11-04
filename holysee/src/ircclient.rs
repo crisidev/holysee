@@ -56,7 +56,7 @@ pub mod client {
         thread::spawn(move || {
             loop {
                 match from_int_reader.recv() {
-                    Ok(msg) => match the_server.send_privmsg(&channel_to_send, msg.text.as_ref()) {
+                    Ok(msg) => match the_server.send_privmsg(&channel_to_send, &format!("{}: {}", msg.from, msg.text)) {
                         Ok(_) => {
                             info!("message sent");
                         }
