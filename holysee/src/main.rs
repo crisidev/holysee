@@ -11,7 +11,6 @@ extern crate futures;
 
 mod ircclient;
 mod telegram;
-mod error;
 mod settings;
 mod message;
 
