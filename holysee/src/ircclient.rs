@@ -34,12 +34,17 @@ pub mod client {
         the_server.identify().unwrap();
         thread::spawn(move || {
             the_server_clone.for_each_incoming(|m| {
+                let srcnick = match m.source_nickname() {
+                    Some(x) => String::from(x),
+                    None => String::from("undefined"),
+                };
                 match m.command {
                     irc::proto::Command::PRIVMSG(source, message_text) => {
+                        debug!("source: {} message_text: {} srcnick: {}", source, message_text, srcnick);
                         to_int_sender_obj.send(Message {
                             transport: TransportType::IRC,
-                            from: source,
-                            to: String::from("-"),
+                            from: srcnick,
+                            to: source,
                             text: message_text,
                         }).unwrap()
                     }

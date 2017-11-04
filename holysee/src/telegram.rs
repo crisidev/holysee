@@ -59,7 +59,7 @@ pub mod client {
             loop {
                 match from_int_reader.recv() {
                     Ok(msg) => {
-                        core.run(api.send(SendMessage::new(chat, msg.text))).unwrap();
+                        core.run(api.send(SendMessage::new(chat, format!("{}: {}", msg.from, msg.text)))).unwrap();
                     },
                     Err(e) => {
                         info!("Error reading from internal channel: {}", e);
