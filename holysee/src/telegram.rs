@@ -28,23 +28,17 @@ pub mod client {
                 match update.kind {
                     UpdateKind::Message(m) => {
                         match m.kind {
-                            MessageKind::Text{data,entities} => {
-                                let from: String = match m.from {
-                                    Some(u) => {
-                                        match u.username {
-                                            Some(username) => username,
-                                            None => {
-                                                match u.last_name {
-                                                    Some(last_name) => {
-                                                        format!("{} {}", u.first_name, last_name)
-                                                    },
-                                                    None => u.first_name
-                                                }
-                                            }
-                                        }
-                                    },
-                                    None => String::from("unset"),
-                                };
+                            MessageKind::Text { data, entities } => {
+                                let from: String = m.from.clone().and_then(|u| {
+                                    u.username.clone().or_else(|| {
+                                        u.last_name.clone().and_then(|ln| {
+                                            Some(format!("{:?} {:?}", u.first_name, ln))
+                                        }).or_else(|| {
+                                            Some(u.first_name.clone())
+                                        })
+                                    }
+                                    )
+                                }).unwrap_or(String::from("unset"));
                                 debug!("entities: {:#?} from: {}", entities, from);
                                 to_int_sender_obj.send(Message {
                                     transport: TransportType::Telegram,
@@ -52,15 +46,15 @@ pub mod client {
                                     to: String::from("-"),
                                     text: data,
                                 }).unwrap()
-                            },
+                            }
                             _ => {
                                 debug!("messageKind != text");
-                            },
+                            }
                         }
                     }
                     _ => {
                         debug!("UpdateKind != messate");
-                    },
+                    }
                 }
                 Ok(())
             });
@@ -78,10 +72,10 @@ pub mod client {
                 match from_int_reader.recv() {
                     Ok(msg) => {
                         core.run(api.send(SendMessage::new(chat, format!("{}: {}", msg.from, msg.text)))).unwrap();
-                    },
+                    }
                     Err(e) => {
                         info!("Error reading from internal channel: {}", e);
-                    },
+                    }
                 };
             }
         });
