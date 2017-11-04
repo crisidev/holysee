@@ -3,8 +3,8 @@ extern crate antidote;
 extern crate error_chain;
 extern crate futures;
 extern crate serde_json;
-extern crate tokio_core;
 extern crate telegram_bot_raw;
+extern crate tokio_core;
 
 #[cfg(feature = "curl_connector")]
 extern crate curl;

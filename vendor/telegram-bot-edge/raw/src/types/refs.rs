@@ -54,7 +54,11 @@ pub trait ToSourceChat {
     fn to_source_chat(&self) -> ChatId;
 }
 
-impl<S> ToSourceChat for S where S: Deref, S::Target: ToSourceChat {
+impl<S> ToSourceChat for S
+where
+    S: Deref,
+    S::Target: ToSourceChat,
+{
     fn to_source_chat(&self) -> ChatId {
         self.deref().to_source_chat()
     }
@@ -71,8 +75,7 @@ impl ToSourceChat for Message {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ChatRef {
     Id(ChatId),
-    #[doc(hidden)]
-    ChannelUsername(String),
+    #[doc(hidden)] ChannelUsername(String),
 }
 
 impl ChatRef {
@@ -86,7 +89,11 @@ pub trait ToChatRef {
     fn to_chat_ref(&self) -> ChatRef;
 }
 
-impl<S> ToChatRef for S where S: Deref, S::Target: ToChatRef {
+impl<S> ToChatRef for S
+where
+    S: Deref,
+    S::Target: ToChatRef,
+{
     fn to_chat_ref(&self) -> ChatRef {
         self.deref().to_chat_ref()
     }
@@ -113,8 +120,8 @@ impl ToChatRef for ChatMember {
 impl ToChatRef for ForwardFrom {
     fn to_chat_ref(&self) -> ChatRef {
         match *self {
-            ForwardFrom::User {ref user, ..} => user.to_chat_ref(),
-            ForwardFrom::Channel {ref channel, ..} => channel.to_chat_ref(),
+            ForwardFrom::User { ref user, .. } => user.to_chat_ref(),
+            ForwardFrom::Channel { ref channel, .. } => channel.to_chat_ref(),
         }
     }
 }
@@ -127,7 +134,8 @@ impl ToChatRef for Forward {
 
 impl Serialize for ChatRef {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         match *self {
             ChatRef::Id(id) => serializer.serialize_i64(id.into()),
@@ -171,7 +179,11 @@ pub trait ToUserId {
     fn to_user_id(&self) -> UserId;
 }
 
-impl<S> ToUserId for S where S: Deref, S::Target: ToUserId {
+impl<S> ToUserId for S
+where
+    S: Deref,
+    S::Target: ToUserId,
+{
     fn to_user_id(&self) -> UserId {
         self.deref().to_user_id()
     }
@@ -225,7 +237,11 @@ pub trait ToMessageId {
     fn to_message_id(&self) -> MessageId;
 }
 
-impl<S> ToMessageId for S where S: Deref, S::Target: ToMessageId {
+impl<S> ToMessageId for S
+where
+    S: Deref,
+    S::Target: ToMessageId,
+{
     fn to_message_id(&self) -> MessageId {
         self.deref().to_message_id()
     }
@@ -253,7 +269,11 @@ pub trait ToFileRef {
     fn to_file_ref(&self) -> FileRef;
 }
 
-impl<S> ToFileRef for S where S: Deref, S::Target: ToFileRef {
+impl<S> ToFileRef for S
+where
+    S: Deref,
+    S::Target: ToFileRef,
+{
     fn to_file_ref(&self) -> FileRef {
         self.deref().to_file_ref()
     }
@@ -280,28 +300,27 @@ file_id_impls!(VideoNote);
 /// Unique file identifier reference.
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct FileRef {
-    inner: String
+    inner: String,
 }
 
 impl<'a> From<&'a str> for FileRef {
     fn from(s: &'a str) -> Self {
         FileRef {
-            inner: s.to_string()
+            inner: s.to_string(),
         }
     }
 }
 
 impl<'a> From<String> for FileRef {
     fn from(s: String) -> Self {
-        FileRef {
-            inner: s.clone()
-        }
+        FileRef { inner: s.clone() }
     }
 }
 
 impl Serialize for FileRef {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where S: Serializer
+    where
+        S: Serializer,
     {
         serializer.serialize_str(&self.inner)
     }

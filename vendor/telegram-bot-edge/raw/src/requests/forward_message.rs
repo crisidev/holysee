@@ -9,8 +9,7 @@ use requests::*;
 pub struct ForwardMessage {
     chat_id: ChatRef,
     from_chat_id: ChatRef,
-    #[serde(skip_serializing_if = "Not::not")]
-    disable_notification: bool,
+    #[serde(skip_serializing_if = "Not::not")] disable_notification: bool,
     message_id: MessageId,
 }
 
@@ -24,8 +23,11 @@ impl Request for ForwardMessage {
 
 impl ForwardMessage {
     pub fn new<M, F, T>(message: M, from: F, to: T) -> Self
-        where M: ToMessageId, F: ToChatRef, T: ToChatRef {
-
+    where
+        M: ToMessageId,
+        F: ToChatRef,
+        T: ToChatRef,
+    {
         ForwardMessage {
             chat_id: to.to_chat_ref(),
             from_chat_id: from.to_chat_ref(),
@@ -42,11 +44,19 @@ impl ForwardMessage {
 
 /// Forward message.
 pub trait CanForwardMessage {
-    fn forward<T>(&self, to: T) -> ForwardMessage where T: ToChatRef;
+    fn forward<T>(&self, to: T) -> ForwardMessage
+    where
+        T: ToChatRef;
 }
 
-impl<M> CanForwardMessage for M where M: ToMessageId + ToSourceChat {
-    fn forward<T>(&self, to: T) -> ForwardMessage where T: ToChatRef {
+impl<M> CanForwardMessage for M
+where
+    M: ToMessageId + ToSourceChat,
+{
+    fn forward<T>(&self, to: T) -> ForwardMessage
+    where
+        T: ToChatRef,
+    {
         ForwardMessage::new(self.to_message_id(), self.to_source_chat(), to)
     }
 }

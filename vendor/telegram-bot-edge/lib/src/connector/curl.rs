@@ -12,13 +12,13 @@ use tokio_core::reactor::Handle;
 use tokio_curl::Session;
 
 use errors::Error;
-use future::{TelegramFuture, NewTelegramFuture};
+use future::{NewTelegramFuture, TelegramFuture};
 
 use super::_base::Connector;
 
 /// This connector uses `tokio-curl` backend.
 pub struct CurlConnector {
-    inner: Rc<Session>
+    inner: Rc<Session>,
 }
 
 impl fmt::Debug for CurlConnector {
@@ -30,11 +30,15 @@ impl fmt::Debug for CurlConnector {
 impl CurlConnector {
     pub fn new(handle: &Handle) -> Self {
         CurlConnector {
-            inner: Rc::new(Session::new(handle.clone()))
+            inner: Rc::new(Session::new(handle.clone())),
         }
     }
 
-    fn create_request(&self, uri: &str, data: Vec<u8>) -> Result<(Easy, Arc<Mutex<Vec<u8>>>), Error> {
+    fn create_request(
+        &self,
+        uri: &str,
+        data: Vec<u8>,
+    ) -> Result<(Easy, Arc<Mutex<Vec<u8>>>), Error> {
         let mut header = List::new();
         header.append("Content-Type: application/json")?;
 

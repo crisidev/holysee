@@ -168,14 +168,14 @@ pub enum MessageKind {
         // contain further reply_to_message fields even if it is itself a reply.
         data: Box<Message>,
     },
-    #[doc(hidden)]
-    Unknown { raw: RawMessage },
+    #[doc(hidden)] Unknown { raw: RawMessage },
 }
 
 impl<'de> Deserialize<'de> for Message {
     // TODO(knsd): Remove .clone()
     fn deserialize<D>(deserializer: D) -> Result<Message, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let raw: RawMessage = Deserialize::deserialize(deserializer)?;
 
@@ -186,17 +186,17 @@ impl<'de> Deserialize<'de> for Message {
         let reply_to_message = raw.reply_to_message.clone();
         let edit_date = raw.edit_date;
 
-        let forward = match (raw.forward_date,
-                             &raw.forward_from,
-                             &raw.forward_from_chat,
-                             raw.forward_from_message_id) {
+        let forward = match (
+            raw.forward_date,
+            &raw.forward_from,
+            &raw.forward_from_chat,
+            raw.forward_from_message_id,
+        ) {
             (None, &None, &None, None) => None,
-            (Some(date), &Some(ref from), &None, None) => {
-                Some(Forward {
-                    date: date,
-                    from: ForwardFrom::User { user: from.clone() },
-                })
-            }
+            (Some(date), &Some(ref from), &None, None) => Some(Forward {
+                date: date,
+                from: ForwardFrom::User { user: from.clone() },
+            }),
             (Some(date), &None, &Some(Chat::Channel(ref channel)), Some(message_id)) => {
                 Some(Forward {
                     date: date,
@@ -397,13 +397,13 @@ pub enum MessageEntityKind {
     Pre,
     TextLink(String), // TODO(knsd) URL?
     TextMention(User),
-    #[doc(hidden)]
-    Unknown(RawMessageEntity),
+    #[doc(hidden)] Unknown(RawMessageEntity),
 }
 
 impl<'de> Deserialize<'de> for MessageEntity {
     fn deserialize<D>(deserializer: D) -> Result<MessageEntity, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         use self::MessageEntityKind::*;
 
@@ -451,7 +451,7 @@ pub struct RawMessageEntity {
     /// Type of the entity. Can be mention (@username), hashtag, bot_command, url, email,
     /// bold (bold text), italic (italic text), code (monowidth string), pre (monowidth block),
     /// text_link (for clickable text URLs), text_mention (for users without usernames).
-    #[serde(rename="type")]
+    #[serde(rename = "type")]
     pub type_: String,
     /// Offset in UTF-16 code units to the start of the entity.
     pub offset: Integer,
@@ -630,6 +630,8 @@ pub struct File {
 
 impl File {
     pub fn get_url(&self, token: &str) -> Option<String> {
-        self.file_path.as_ref().map(|path| format!("{}file/bot{}/{}", TELEGRAM_URL, token, path))
+        self.file_path
+            .as_ref()
+            .map(|path| format!("{}file/bot{}/{}", TELEGRAM_URL, token, path))
     }
 }

@@ -2,8 +2,8 @@
 pub mod reply_markup;
 
 use serde::de::DeserializeOwned;
-use serde::ser::{Serialize, Serializer, Error};
-use serde_json::{Value, to_value};
+use serde::ser::{Error, Serialize, Serializer};
+use serde_json::{to_value, Value};
 
 use types::*;
 use url::*;
@@ -23,7 +23,7 @@ pub trait Response {
 
 /// Read `T` from the Telegram server and returns the same type.
 pub struct IdResponse<T> {
-    phantom: ::std::marker::PhantomData<T>
+    phantom: ::std::marker::PhantomData<T>,
 }
 
 impl<T: DeserializeOwned> Response for IdResponse<T> {
@@ -101,8 +101,10 @@ impl<Resp: Response + Send + 'static> Request for DetachedRequest<Resp> {
 }
 
 impl<Resp> Serialize for DetachedRequest<Resp> {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error> where S: Serializer {
-
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
         match self.encoded {
             Ok(ref value) => value.serialize(serializer),
             Err(ref err) => Err(S::Error::custom(err)),
@@ -116,7 +118,9 @@ pub trait ToRequest<'b> {
     type Request: Request;
 
     /// Convert type to request and send it to the chat.
-    fn to_request<C>(&'b self, chat: C) -> Self::Request where C: ToChatRef;
+    fn to_request<C>(&'b self, chat: C) -> Self::Request
+    where
+        C: ToChatRef;
 }
 
 /// Use this trait to convert a complex type to corresponding request and reply to the message.
@@ -126,7 +130,8 @@ pub trait ToReplyRequest<'b> {
 
     /// Convert type to request and reply to the message.
     fn to_reply_request<M>(&'b self, message: M) -> Self::Request
-        where M: ToMessageId + ToSourceChat;
+    where
+        M: ToMessageId + ToSourceChat;
 }
 
 /// Strongly typed ParseMode.

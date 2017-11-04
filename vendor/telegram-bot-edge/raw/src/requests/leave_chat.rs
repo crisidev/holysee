@@ -5,7 +5,7 @@ use requests::*;
 #[derive(Debug, Clone, PartialEq, PartialOrd, Serialize)]
 #[must_use = "requests do nothing unless sent"]
 pub struct LeaveChat {
-    chat_id: ChatRef
+    chat_id: ChatRef,
 }
 
 impl Request for LeaveChat {
@@ -17,9 +17,12 @@ impl Request for LeaveChat {
 }
 
 impl LeaveChat {
-    pub fn new<C>(chat: C) -> Self where C: ToChatRef {
+    pub fn new<C>(chat: C) -> Self
+    where
+        C: ToChatRef,
+    {
         LeaveChat {
-            chat_id: chat.to_chat_ref()
+            chat_id: chat.to_chat_ref(),
         }
     }
 }
@@ -29,7 +32,10 @@ pub trait CanLeaveChat {
     fn leave(&self) -> LeaveChat;
 }
 
-impl<C> CanLeaveChat for C where C: ToChatRef {
+impl<C> CanLeaveChat for C
+where
+    C: ToChatRef,
+{
     fn leave(&self) -> LeaveChat {
         LeaveChat::new(self)
     }

@@ -14,13 +14,13 @@ use hyper_tls::HttpsConnector;
 use tokio_core::reactor::Handle;
 
 use errors::Error;
-use future::{TelegramFuture, NewTelegramFuture};
+use future::{NewTelegramFuture, TelegramFuture};
 
 use super::_base::Connector;
 
 /// This connector uses `hyper` backend.
 pub struct HyperConnector<C> {
-    inner: Rc<Client<C>>
+    inner: Rc<Client<C>>,
 }
 
 impl<C> fmt::Debug for HyperConnector<C> {
@@ -32,7 +32,7 @@ impl<C> fmt::Debug for HyperConnector<C> {
 impl<C> HyperConnector<C> {
     pub fn new(client: Client<C>) -> Self {
         HyperConnector {
-            inner: Rc::new(client)
+            inner: Rc::new(client),
         }
     }
 }
@@ -51,11 +51,13 @@ impl<C: Connect> Connector for HyperConnector<C> {
         });
 
         let future = request.and_then(move |response| {
-            response.body().map_err(From::from)
-                .fold(vec![], |mut result, chunk| -> Result<Vec<u8>, Error> {
+            response.body().map_err(From::from).fold(
+                vec![],
+                |mut result, chunk| -> Result<Vec<u8>, Error> {
                     result.extend_from_slice(&chunk);
                     Ok(result)
-            })
+                },
+            )
         });
 
         TelegramFuture::new(Box::new(future))

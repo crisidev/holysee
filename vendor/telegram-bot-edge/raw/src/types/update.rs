@@ -26,13 +26,13 @@ pub enum UpdateKind {
     // InlineQuery(InlineQuery),
     // ChosenInlineResult(ChosenInlineResult),
     // CallbackQuery(OptionCallbackQuery),
-    #[doc(hidden)]
-    Unknown(RawUpdate),
+    #[doc(hidden)] Unknown(RawUpdate),
 }
 
 impl<'de> Deserialize<'de> for Update {
     fn deserialize<D>(deserializer: D) -> Result<Update, D::Error>
-        where D: Deserializer<'de>
+    where
+        D: Deserializer<'de>,
     {
         let raw: RawUpdate = Deserialize::deserialize(deserializer)?;
         macro_rules! maybe_field {
@@ -74,7 +74,7 @@ pub struct RawUpdate {
     /// New incoming channel post of any kind — text, photo, sticker, etc.
     pub channel_post: Option<Message>,
     /// New version of a channel post that is known to the bot and was edited
-    pub edited_channel_post: Option<Message>, 
+    pub edited_channel_post: Option<Message>,
     // pub inline_query: Option<InlineQuery>,
     // pub chosen_inline_result: Option<ChosenInlineResult>,
     // pub callback_query: Option<CallbackQuery>,

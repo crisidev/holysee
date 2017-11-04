@@ -21,7 +21,11 @@ impl Request for KickChatMember {
 }
 
 impl KickChatMember {
-    pub fn new<C, U>(chat: C, user: U) -> Self where C: ToChatRef, U: ToUserId {
+    pub fn new<C, U>(chat: C, user: U) -> Self
+    where
+        C: ToChatRef,
+        U: ToUserId,
+    {
         KickChatMember {
             chat_id: chat.to_chat_ref(),
             user_id: user.to_user_id(),
@@ -31,22 +35,38 @@ impl KickChatMember {
 
 /// Kick a user from a group or a supergroup.
 pub trait CanKickChatMemberForChat {
-    fn kick<O>(&self, other: O) -> KickChatMember where O: ToUserId;
+    fn kick<O>(&self, other: O) -> KickChatMember
+    where
+        O: ToUserId;
 }
 
-impl<C> CanKickChatMemberForChat for C where C: ToChatRef {
-    fn kick<O>(&self, other: O) -> KickChatMember where O: ToUserId {
+impl<C> CanKickChatMemberForChat for C
+where
+    C: ToChatRef,
+{
+    fn kick<O>(&self, other: O) -> KickChatMember
+    where
+        O: ToUserId,
+    {
         KickChatMember::new(self, other)
     }
 }
 
 /// Kick a user from a group or a supergroup.
 pub trait CanKickChatMemberForUser {
-    fn kick_from<O>(&self, other: O) -> KickChatMember where O: ToChatRef;
+    fn kick_from<O>(&self, other: O) -> KickChatMember
+    where
+        O: ToChatRef;
 }
 
-impl<U> CanKickChatMemberForUser for U where U: ToUserId {
-    fn kick_from<O>(&self, other: O) -> KickChatMember where O: ToChatRef {
+impl<U> CanKickChatMemberForUser for U
+where
+    U: ToUserId,
+{
+    fn kick_from<O>(&self, other: O) -> KickChatMember
+    where
+        O: ToChatRef,
+    {
         KickChatMember::new(other, self)
     }
 }

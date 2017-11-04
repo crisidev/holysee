@@ -2,16 +2,16 @@ use std::borrow::Borrow;
 use std::rc::Rc;
 use std::time::Duration;
 
-use futures::{Future};
-use futures::future::{result};
+use futures::Future;
+use futures::future::result;
 use serde_json;
 use tokio_core::reactor::{Handle, Timeout};
 
-use telegram_bot_raw::{Request, ResponseWrapper, Response};
+use telegram_bot_raw::{Request, Response, ResponseWrapper};
 
-use connector::{Connector, default_connector};
+use connector::{default_connector, Connector};
 use errors::ErrorKind;
-use future::{TelegramFuture, NewTelegramFuture};
+use future::{NewTelegramFuture, TelegramFuture};
 use stream::{NewUpdatesStream, UpdatesStream};
 
 /// Main type for sending requests to the Telegram bot API.
@@ -29,7 +29,7 @@ struct ApiInner {
 #[derive(Debug)]
 pub enum ConnectorConfig {
     Default,
-    Specified(Box<Connector>)
+    Specified(Box<Connector>),
 }
 
 impl Default for ConnectorConfig {
@@ -46,7 +46,7 @@ impl ConnectorConfig {
     pub fn take(self, handle: &Handle) -> Box<Connector> {
         match self {
             ConnectorConfig::Default => default_connector(&handle),
-            ConnectorConfig::Specified(connector) => connector
+            ConnectorConfig::Specified(connector) => connector,
         }
     }
 }
@@ -206,14 +206,18 @@ impl Api {
     /// # }
     /// ```
     pub fn send_timeout<Req: Request>(
-        &self, request: Req, duration: Duration)
-        -> TelegramFuture<Option<<Req::Response as Response>::Type>> {
-
+        &self,
+        request: Req,
+        duration: Duration,
+    ) -> TelegramFuture<Option<<Req::Response as Response>::Type>> {
         let timeout_future = result(Timeout::new(duration, &self.inner.handle))
-            .flatten().map_err(From::from).map(|()| None);
+            .flatten()
+            .map_err(From::from)
+            .map(|()| None);
         let send_future = self.send(request).map(|resp| Some(resp));
 
-        let future = timeout_future.select(send_future)
+        let future = timeout_future
+            .select(send_future)
             .map(|(item, _next)| item)
             .map_err(|(item, _next)| item);
 
@@ -242,34 +246,35 @@ impl Api {
     /// # }
     /// # }
     /// ```
-    pub fn send<Req: Request>(&self, request: Req)
-        -> TelegramFuture<<Req::Response as Response>::Type> {
-
+    pub fn send<Req: Request>(
+        &self,
+        request: Req,
+    ) -> TelegramFuture<<Req::Response as Response>::Type> {
         let encoded = result(serde_json::to_vec(&request).map_err(From::from));
         let url = request.get_url(&self.inner.token);
 
         let api = self.clone();
-        let response = encoded.and_then(move |data| {
-            api.inner.connector.post_json(&url, data)
-        });
+        let response = encoded.and_then(move |data| api.inner.connector.post_json(&url, data));
 
         let future = response.and_then(move |bytes| {
-            result(serde_json::from_slice(&bytes).map_err(From::from).and_then(|value| {
-                match value {
-                    ResponseWrapper::Success {result} => {
-                        Ok(Req::Response::map(result))
-                    },
-                    ResponseWrapper::Error { description, parameters } => {
-                        Err(ErrorKind::TelegramError {
-                            description: description,
-                            parameters: parameters
-                        }.into())
-                    },
-                }
-            }))
+            result(
+                serde_json::from_slice(&bytes)
+                    .map_err(From::from)
+                    .and_then(|value| match value {
+                        ResponseWrapper::Success { result } => Ok(Req::Response::map(result)),
+                        ResponseWrapper::Error {
+                            description,
+                            parameters,
+                        } => Err(
+                            ErrorKind::TelegramError {
+                                description: description,
+                                parameters: parameters,
+                            }.into(),
+                        ),
+                    }),
+            )
         });
 
         TelegramFuture::new(Box::new(future))
     }
 }
-

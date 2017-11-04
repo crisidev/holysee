@@ -10,16 +10,11 @@ use requests::*;
 pub struct SendMessage<'s> {
     chat_id: ChatRef,
     text: Cow<'s, str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    parse_mode: Option<ParseMode>,
-    #[serde(skip_serializing_if = "Not::not")]
-    disable_web_page_preview: bool,
-    #[serde(skip_serializing_if = "Not::not")]
-    disable_notification: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<MessageId>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    #[serde(skip_serializing_if = "Option::is_none")] parse_mode: Option<ParseMode>,
+    #[serde(skip_serializing_if = "Not::not")] disable_web_page_preview: bool,
+    #[serde(skip_serializing_if = "Not::not")] disable_notification: bool,
+    #[serde(skip_serializing_if = "Option::is_none")] reply_to_message_id: Option<MessageId>,
+    #[serde(skip_serializing_if = "Option::is_none")] reply_markup: Option<ReplyMarkup>,
 }
 
 impl<'c, 's> Request for SendMessage<'s> {
@@ -31,7 +26,11 @@ impl<'c, 's> Request for SendMessage<'s> {
 }
 
 impl<'s> SendMessage<'s> {
-    pub fn new<C, T>(chat: C, text: T) -> Self where C: ToChatRef, T: Into<Cow<'s, str>> {
+    pub fn new<C, T>(chat: C, text: T) -> Self
+    where
+        C: ToChatRef,
+        T: Into<Cow<'s, str>>,
+    {
         SendMessage {
             chat_id: chat.to_chat_ref(),
             text: text.into(),
@@ -58,12 +57,19 @@ impl<'s> SendMessage<'s> {
         self
     }
 
-    pub fn reply_to<R>(&mut self, to: R) -> &mut Self where R: ToMessageId {
+    pub fn reply_to<R>(&mut self, to: R) -> &mut Self
+    where
+        R: ToMessageId,
+    {
         self.reply_to_message_id = Some(to.to_message_id());
         self
     }
 
-    pub fn reply_markup<R>(&mut self, reply_markup: R) -> &mut Self where R: Into<ReplyMarkup> { // TODO(knsd): nice builder?
+    pub fn reply_markup<R>(&mut self, reply_markup: R) -> &mut Self
+    where
+        R: Into<ReplyMarkup>,
+    {
+        // TODO(knsd): nice builder?
         self.reply_markup = Some(reply_markup.into());
         self
     }
@@ -71,22 +77,38 @@ impl<'s> SendMessage<'s> {
 
 /// Send text message.
 pub trait CanSendMessage {
-    fn text<'s, T>(&self, text: T) -> SendMessage<'s> where T: Into<Cow<'s, str>>;
+    fn text<'s, T>(&self, text: T) -> SendMessage<'s>
+    where
+        T: Into<Cow<'s, str>>;
 }
 
-impl<C> CanSendMessage for C where C: ToChatRef {
-    fn text<'s, T>(&self, text: T) -> SendMessage<'s> where T: Into<Cow<'s, str>> {
+impl<C> CanSendMessage for C
+where
+    C: ToChatRef,
+{
+    fn text<'s, T>(&self, text: T) -> SendMessage<'s>
+    where
+        T: Into<Cow<'s, str>>,
+    {
         SendMessage::new(self, text)
     }
 }
 
 /// Reply with text message.
 pub trait CanReplySendMessage {
-    fn text_reply<'c, 's, T>(&self, text: T) -> SendMessage<'s> where T: Into<Cow<'s, str>>;
+    fn text_reply<'c, 's, T>(&self, text: T) -> SendMessage<'s>
+    where
+        T: Into<Cow<'s, str>>;
 }
 
-impl<M> CanReplySendMessage for M where M: ToMessageId + ToSourceChat {
-    fn text_reply<'c, 's, T>(&self, text: T) -> SendMessage<'s> where T: Into<Cow<'s, str>> {
+impl<M> CanReplySendMessage for M
+where
+    M: ToMessageId + ToSourceChat,
+{
+    fn text_reply<'c, 's, T>(&self, text: T) -> SendMessage<'s>
+    where
+        T: Into<Cow<'s, str>>,
+    {
         let mut rq = self.to_source_chat().text(text);
         rq.reply_to(self.to_message_id());
         rq

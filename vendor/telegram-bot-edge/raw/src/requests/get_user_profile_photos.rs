@@ -19,7 +19,10 @@ impl Request for GetUserProfilePhotos {
 }
 
 impl GetUserProfilePhotos {
-    pub fn new<U>(user: U) -> Self where U: ToUserId {
+    pub fn new<U>(user: U) -> Self
+    where
+        U: ToUserId,
+    {
         GetUserProfilePhotos {
             user_id: user.to_user_id(),
             offset: None,
@@ -43,7 +46,10 @@ pub trait CanGetUserProfilePhotos {
     fn get_user_profile_photos(&self) -> GetUserProfilePhotos;
 }
 
-impl<'b, U> CanGetUserProfilePhotos for U where U: ToUserId {
+impl<'b, U> CanGetUserProfilePhotos for U
+where
+    U: ToUserId,
+{
     fn get_user_profile_photos(&self) -> GetUserProfilePhotos {
         GetUserProfilePhotos::new(self)
     }

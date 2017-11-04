@@ -29,7 +29,7 @@ macro_rules! make_test {
 make_test!(migrate_from_chat_id, |update: Update| {
     if let UpdateKind::Message(message) = update.kind {
         if let MessageKind::MigrateFromChatId { .. } = message.kind {
-            return ()
+            return ();
         }
     }
     assert!(false)
@@ -38,7 +38,7 @@ make_test!(migrate_from_chat_id, |update: Update| {
 make_test!(migrate_to_chat_id, |update: Update| {
     if let UpdateKind::Message(message) = update.kind {
         if let MessageKind::MigrateToChatId { .. } = message.kind {
-            return ()
+            return ();
         }
     }
     assert!(false)

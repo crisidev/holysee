@@ -11,14 +11,10 @@ pub struct SendContact<'p, 'f, 'l> {
     chat_id: ChatRef,
     phone_number: Cow<'p, str>,
     first_name: Cow<'f, str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    last_name: Option<Cow<'l, str>>,
-    #[serde(skip_serializing_if = "Not::not")]
-    disable_notification: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_to_message_id: Option<MessageId>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    #[serde(skip_serializing_if = "Option::is_none")] last_name: Option<Cow<'l, str>>,
+    #[serde(skip_serializing_if = "Not::not")] disable_notification: bool,
+    #[serde(skip_serializing_if = "Option::is_none")] reply_to_message_id: Option<MessageId>,
+    #[serde(skip_serializing_if = "Option::is_none")] reply_markup: Option<ReplyMarkup>,
 }
 
 impl<'p, 'f, 'l> Request for SendContact<'p, 'f, 'l> {
@@ -31,9 +27,10 @@ impl<'p, 'f, 'l> Request for SendContact<'p, 'f, 'l> {
 
 impl<'p, 'f, 'l> SendContact<'p, 'f, 'l> {
     pub fn new<C, P, F>(chat: C, phone_number: P, first_name: F) -> Self
-        where C: ToChatRef,
-              P: Into<Cow<'p, str>>,
-              F: Into<Cow<'f, str>>
+    where
+        C: ToChatRef,
+        P: Into<Cow<'p, str>>,
+        F: Into<Cow<'f, str>>,
     {
         SendContact {
             chat_id: chat.to_chat_ref(),
@@ -47,7 +44,8 @@ impl<'p, 'f, 'l> SendContact<'p, 'f, 'l> {
     }
 
     pub fn last_name<F>(&mut self, last_name: F) -> &mut Self
-        where F: Into<Cow<'l, str>>
+    where
+        F: Into<Cow<'l, str>>,
     {
         self.last_name = Some(last_name.into());
         self
@@ -59,14 +57,16 @@ impl<'p, 'f, 'l> SendContact<'p, 'f, 'l> {
     }
 
     pub fn reply_to<R>(&mut self, to: R) -> &mut Self
-        where R: ToMessageId
+    where
+        R: ToMessageId,
     {
         self.reply_to_message_id = Some(to.to_message_id());
         self
     }
 
     pub fn reply_markup<R>(&mut self, reply_markup: R) -> &mut Self
-        where R: Into<ReplyMarkup>
+    where
+        R: Into<ReplyMarkup>,
     {
         self.reply_markup = Some(reply_markup.into());
         self
@@ -76,16 +76,19 @@ impl<'p, 'f, 'l> SendContact<'p, 'f, 'l> {
 /// Send phone contact.
 pub trait CanSendContact<'p, 'f, 'l> {
     fn contact<P, F>(&self, phone_number: P, first_name: F) -> SendContact<'p, 'f, 'l>
-        where P: Into<Cow<'p, str>>,
-              F: Into<Cow<'f, str>>;
+    where
+        P: Into<Cow<'p, str>>,
+        F: Into<Cow<'f, str>>;
 }
 
 impl<'p, 'f, 'l, C> CanSendContact<'p, 'f, 'l> for C
-    where C: ToChatRef
+where
+    C: ToChatRef,
 {
     fn contact<P, F>(&self, phone_number: P, first_name: F) -> SendContact<'p, 'f, 'l>
-        where P: Into<Cow<'p, str>>,
-              F: Into<Cow<'f, str>>
+    where
+        P: Into<Cow<'p, str>>,
+        F: Into<Cow<'f, str>>,
     {
         SendContact::new(self, phone_number, first_name)
     }
@@ -93,21 +96,28 @@ impl<'p, 'f, 'l, C> CanSendContact<'p, 'f, 'l> for C
 
 /// Reply with phone contact.
 pub trait CanReplySendContact {
-    fn contact_reply<'p, 'f, 'l, P: 'p, F: 'f>(&self,
-                                                   phone_number: P,
-                                                   first_name: F)
-                                                   -> SendContact<'p, 'f, 'l>
-        where P: Into<Cow<'p, str>>,
-              F: Into<Cow<'f, str>>;
+    fn contact_reply<'p, 'f, 'l, P: 'p, F: 'f>(
+        &self,
+        phone_number: P,
+        first_name: F,
+    ) -> SendContact<'p, 'f, 'l>
+    where
+        P: Into<Cow<'p, str>>,
+        F: Into<Cow<'f, str>>;
 }
 
-impl<M> CanReplySendContact for M where M: ToMessageId + ToSourceChat {
-    fn contact_reply<'p, 'f, 'l, P: 'p, F: 'f>(&self,
-                                                   phone_number: P,
-                                                   first_name: F)
-                                                   -> SendContact<'p, 'f, 'l>
-        where P: Into<Cow<'p, str>>,
-              F: Into<Cow<'f, str>>
+impl<M> CanReplySendContact for M
+where
+    M: ToMessageId + ToSourceChat,
+{
+    fn contact_reply<'p, 'f, 'l, P: 'p, F: 'f>(
+        &self,
+        phone_number: P,
+        first_name: F,
+    ) -> SendContact<'p, 'f, 'l>
+    where
+        P: Into<Cow<'p, str>>,
+        F: Into<Cow<'f, str>>,
     {
         let mut rq = self.to_source_chat().contact(phone_number, first_name);
         rq.reply_to(self.to_message_id());
@@ -118,7 +128,10 @@ impl<M> CanReplySendContact for M where M: ToMessageId + ToSourceChat {
 impl<'b> ToRequest<'b> for Contact {
     type Request = SendContact<'b, 'b, 'b>;
 
-    fn to_request<C>(&'b self, chat: C) -> Self::Request where C: ToChatRef {
+    fn to_request<C>(&'b self, chat: C) -> Self::Request
+    where
+        C: ToChatRef,
+    {
         let mut rq = chat.contact(self.phone_number.as_str(), self.first_name.as_str());
         if let Some(ref last_name) = self.last_name {
             rq.last_name(last_name.as_str());
@@ -131,8 +144,9 @@ impl<'b> ToReplyRequest<'b> for Contact {
     type Request = SendContact<'b, 'b, 'b>;
 
     fn to_reply_request<M>(&'b self, message: M) -> Self::Request
-        where M: ToMessageId + ToSourceChat {
-
+    where
+        M: ToMessageId + ToSourceChat,
+    {
         let mut rq = message.contact_reply(self.phone_number.as_str(), self.first_name.as_str());
         if let Some(ref last_name) = self.last_name {
             rq.last_name(last_name.as_str());

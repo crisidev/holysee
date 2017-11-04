@@ -10,8 +10,7 @@ pub struct EditMessageCaption<'s> {
     chat_id: ChatRef,
     message_id: MessageId,
     caption: Cow<'s, str>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    reply_markup: Option<ReplyMarkup>,
+    #[serde(skip_serializing_if = "Option::is_none")] reply_markup: Option<ReplyMarkup>,
 }
 
 impl<'s> Request for EditMessageCaption<'s> {
@@ -24,8 +23,11 @@ impl<'s> Request for EditMessageCaption<'s> {
 
 impl<'s> EditMessageCaption<'s> {
     pub fn new<C, M, T>(chat: C, message_id: M, caption: T) -> Self
-        where C: ToChatRef, M: ToMessageId, T: Into<Cow<'s, str>> {
-
+    where
+        C: ToChatRef,
+        M: ToMessageId,
+        T: Into<Cow<'s, str>>,
+    {
         EditMessageCaption {
             chat_id: chat.to_chat_ref(),
             message_id: message_id.to_message_id(),
@@ -34,7 +36,11 @@ impl<'s> EditMessageCaption<'s> {
         }
     }
 
-    pub fn reply_markup<R>(&mut self, reply_markup: R) -> &mut Self where R: Into<ReplyMarkup> { // TODO(knsd): nice builder?
+    pub fn reply_markup<R>(&mut self, reply_markup: R) -> &mut Self
+    where
+        R: Into<ReplyMarkup>,
+    {
+        // TODO(knsd): nice builder?
         self.reply_markup = Some(reply_markup.into());
         self
     }
@@ -42,11 +48,19 @@ impl<'s> EditMessageCaption<'s> {
 
 /// Edit captions of messages sent by the bot.
 pub trait CanEditMessageCaption {
-    fn edit_caption<'s, T>(&self, caption: T) -> EditMessageCaption<'s> where T: Into<Cow<'s, str>>;
+    fn edit_caption<'s, T>(&self, caption: T) -> EditMessageCaption<'s>
+    where
+        T: Into<Cow<'s, str>>;
 }
 
-impl<M> CanEditMessageCaption for M where M: ToMessageId + ToSourceChat {
-    fn edit_caption<'s, T>(&self, caption: T) -> EditMessageCaption<'s> where T: Into<Cow<'s, str>> {
+impl<M> CanEditMessageCaption for M
+where
+    M: ToMessageId + ToSourceChat,
+{
+    fn edit_caption<'s, T>(&self, caption: T) -> EditMessageCaption<'s>
+    where
+        T: Into<Cow<'s, str>>,
+    {
         EditMessageCaption::new(self.to_source_chat(), self.to_message_id(), caption)
     }
 }
