@@ -20,4 +20,3 @@ notifications:
     on_success: always # default: always
     on_failure: always # default: always
     use_notice: true
-    skip_join: true
