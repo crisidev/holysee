@@ -44,7 +44,7 @@ pub mod client {
                             debug!("entities: {:#?} from: {}", entities, from);
                             to_int_sender_obj
                                 .send(Message {
-                                    transport: TransportType::Telegram,
+                                    from_transport: TransportType::Telegram,
                                     from: from,
                                     to: String::from("-"),
                                     text: data,
@@ -76,7 +76,7 @@ pub mod client {
                     Ok(msg) => {
                         core.run(api.send(SendMessage::new(
                             chat,
-                            format!("{}: {}", msg.from, msg.text),
+                            msg.format(),
                         ))).unwrap();
                     }
                     Err(e) => {

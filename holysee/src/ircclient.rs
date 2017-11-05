@@ -50,7 +50,7 @@ pub mod client {
                     );
                     to_int_sender_obj
                         .send(Message {
-                            transport: TransportType::IRC,
+                            from_transport: TransportType::IRC,
                             from: srcnick,
                             to: source,
                             text: message_text,
@@ -66,7 +66,6 @@ pub mod client {
                     },
                     irc::proto::Command::NOTICE(_, notice) => {
                         debug!("NOTICE: {}", notice);
-                        debug!("DIO MERDA: {}", format!("You are now identified for {}", username_clone));
                         if notice.contains("You are now identified for") {
                             debug!("identified successfully for {}", username_clone);
                             the_server_clone.send_join(&channel_clone).unwrap()
@@ -83,7 +82,7 @@ pub mod client {
         thread::spawn(move || loop {
             match from_int_reader.recv() {
                 Ok(msg) => match the_server
-                    .send_privmsg(&channel_to_send, &format!("{}: {}", msg.from, msg.text))
+                    .send_privmsg(&channel_to_send, msg.format().as_ref())
                     {
                         Ok(_) => {
                             info!("Message sent");

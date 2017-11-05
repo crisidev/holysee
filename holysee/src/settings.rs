@@ -11,17 +11,20 @@ pub struct Irc {
     pub channel: String,
     pub ssl: bool,
     pub ssl_verify: bool,
+    pub allow_receive: bool,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Telegram {
     pub token: String,
     pub chat_id: i64,
+    pub allow_receive: bool,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Settings {
     pub debug: bool,
+    pub command_prefix: String,
     pub irc: Irc,
     pub telegram: Telegram,
 }

@@ -1,4 +1,5 @@
 debug = true
+command_prefix = "!"
 
 [irc]
 nickname = "user"
@@ -9,8 +10,10 @@ host = "irc.freenode.net"
 port = "6697"
 channel = "#example"
 ssl = true
-ssl_verify = truedebug = true
+ssl_verify = true
+allow_receive = true
 
 [telegram]
 token = "apikey"
 chat_id = "012345"
+allow_receive = true
