@@ -16,10 +16,12 @@ mod ircclient;
 mod telegram;
 mod settings;
 mod message;
+mod commands;
 
 use std::process;
 use settings::Settings;
 use message::Message;
+use commands::{CommandDispatcher, SendToTelegramCommand, SendToIrcCommand, MessageAsCommand};
 
 use std::sync::mpsc::RecvError;
 use std::sync::mpsc;
@@ -44,8 +46,10 @@ fn main() {
 
     info!("Starting up");
 
+    let mut command_dispatcher = CommandDispatcher::new();
+
     loop {
-        let current_message: Message;
+        let mut current_message: Message;
         select! {
             irc_answer = from_irc.recv() => {
                 match irc_answer {
@@ -70,9 +74,27 @@ fn main() {
                 };
             }
         }
-        if current_message.is_command(settings.command_prefix.as_ref()) {
-            current_message.handle_command(irc_sender.clone(), tg_sender.clone());
+
+        let message_as_command = MessageAsCommand::new();
+        let send_to_irc_command = SendToIrcCommand::new(message_as_command);
+        let send_to_tg_command = SendToTelegramCommand::new(message_as_command);
+
+        SendToTelegramCommand::matches_message_text(&current_message.text.clone()).and_then::<Option<String>, FnOnce(String) -> Option<String>>(|this_match| {
+            debug!("send to TELEGRAM");
+            command_dispatcher.set_command(Box::new(send_to_tg_command));
+            current_message.text = this_match;
+            command_dispatcher.execute(&current_message, irc_sender.clone(), tg_sender.clone());
+            return None
+        });
+
+
+
+        if SendToIrcCommand::matches_message_text(&current_message.text.clone()).is_some() {
+            debug!("send to IRC");
+            command_dispatcher.set_command(Box::new(send_to_irc_command));
+            command_dispatcher.execute(&current_message, irc_sender.clone(), tg_sender.clone());
         } else {
+            debug!("RELAY message");
             match current_message.from_transport {
                 message::TransportType::Telegram => {
                     if settings.irc.allow_receive {
