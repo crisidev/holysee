@@ -26,35 +26,37 @@ pub mod client {
             let api = Api::configure(&token).build(core.handle());
             let future = api.stream().for_each(|update| {
                 match update.kind {
-                    UpdateKind::Message(m) => match m.kind {
-                        MessageKind::Text { data, entities } => {
-                            let from: String = m.from
-                                .clone()
-                                .and_then(|u| {
-                                    u.username.clone().or_else(|| {
-                                        u.last_name
+                    UpdateKind::Message(m) => {
+                        match m.kind {
+                            MessageKind::Text { data, entities } => {
+                                let from: String = m.from
+                                    .clone()
+                                    .and_then(|u| {
+                                        u.username.clone().or_else(|| {
+                                            u.last_name
                                             .clone()
                                             .and_then(
                                                 |ln| Some(format!("{:?} {:?}", u.first_name, ln)),
                                             )
                                             .or_else(|| Some(u.first_name.clone()))
+                                        })
                                     })
-                                })
-                                .unwrap_or(String::from("unset"));
-                            debug!("entities: {:#?} from: {}", entities, from);
-                            to_int_sender_obj
-                                .send(Message {
-                                    from_transport: TransportType::Telegram,
-                                    from: from,
-                                    to: String::from("-"),
-                                    text: data,
-                                })
-                                .unwrap()
+                                    .unwrap_or(String::from("unset"));
+                                debug!("entities: {:#?} from: {}", entities, from);
+                                to_int_sender_obj
+                                    .send(Message {
+                                        from_transport: TransportType::Telegram,
+                                        from: from,
+                                        to: String::from("-"),
+                                        text: data,
+                                    })
+                                    .unwrap()
+                            }
+                            _ => {
+                                debug!("messageKind != text");
+                            }
                         }
-                        _ => {
-                            debug!("messageKind != text");
-                        }
-                    },
+                    }
                     _ => {
                         debug!("UpdateKind != messate");
                     }
@@ -74,10 +76,8 @@ pub mod client {
             loop {
                 match from_int_reader.recv() {
                     Ok(msg) => {
-                        core.run(api.send(SendMessage::new(
-                            chat,
-                            msg.format(),
-                        ))).unwrap();
+                        core.run(api.send(SendMessage::new(chat, msg.format())))
+                            .unwrap();
                     }
                     Err(e) => {
                         info!("Error reading from internal channel: {}", e);

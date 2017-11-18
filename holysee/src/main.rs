@@ -49,7 +49,7 @@ fn main() {
     let mut command_dispatcher = CommandDispatcher::new();
 
     loop {
-        let mut current_message: Message;
+        let current_message: Message;
         select! {
             irc_answer = from_irc.recv() => {
                 match irc_answer {
@@ -79,34 +79,22 @@ fn main() {
         let send_to_irc_command = SendToIrcCommand::new(message_as_command);
         let send_to_tg_command = SendToTelegramCommand::new(message_as_command);
 
-        SendToTelegramCommand::matches_message_text(&current_message.text.clone()).and_then::<Option<String>, FnOnce(String) -> Option<String>>(|this_match| {
+        if send_to_tg_command
+            .matches_message_text(&current_message.text.clone())
+            .is_some() || settings.telegram.allow_receive
+        {
             debug!("send to TELEGRAM");
             command_dispatcher.set_command(Box::new(send_to_tg_command));
-            current_message.text = this_match;
             command_dispatcher.execute(&current_message, irc_sender.clone(), tg_sender.clone());
-            return None
-        });
-
-
-
-        if SendToIrcCommand::matches_message_text(&current_message.text.clone()).is_some() {
+        } else if send_to_irc_command
+                   .matches_message_text(&current_message.text.clone())
+                   .is_some() || settings.irc.allow_receive
+        {
             debug!("send to IRC");
             command_dispatcher.set_command(Box::new(send_to_irc_command));
             command_dispatcher.execute(&current_message, irc_sender.clone(), tg_sender.clone());
         } else {
-            debug!("RELAY message");
-            match current_message.from_transport {
-                message::TransportType::Telegram => {
-                    if settings.irc.allow_receive {
-                        irc_sender.send(current_message).unwrap();
-                    }
-                }
-                message::TransportType::IRC => {
-                    if settings.telegram.allow_receive {
-                        tg_sender.send(current_message).unwrap();
-                    }
-                }
-            };
+            debug!("unknown message");
         }
     }
 }

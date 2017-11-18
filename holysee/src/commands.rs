@@ -33,21 +33,25 @@ impl MessageAsCommand {
 
     pub fn to_irc(&self, msg: &Message, irc_sender: Sender<Message>) {
         debug!("MessageAsCommand::to_irc");
-        irc_sender.send(Message {
-            text: msg.text.clone(),
-            from: msg.from.clone(),
-            to: msg.to.clone(),
-            from_transport: TransportType::Telegram,
-        }).unwrap();
+        irc_sender
+            .send(Message {
+                text: msg.text.clone(),
+                from: msg.from.clone(),
+                to: msg.to.clone(),
+                from_transport: TransportType::Telegram,
+            })
+            .unwrap();
     }
     pub fn to_telegram(&self, msg: &Message, tg_sender: Sender<Message>) {
         debug!("MessageAsCommand::to_irc");
-        tg_sender.send(Message {
-            text: msg.text.clone(),
-            from: msg.from.clone(),
-            to: msg.to.clone(),
-            from_transport: TransportType::IRC,
-        }).unwrap();
+        tg_sender
+            .send(Message {
+                text: msg.text.clone(),
+                from: msg.from.clone(),
+                to: msg.to.clone(),
+                from_transport: TransportType::IRC,
+            })
+            .unwrap();
     }
 }
 
@@ -60,18 +64,23 @@ impl SendToIrcCommand {
     pub fn new(command: MessageAsCommand) -> SendToIrcCommand {
         SendToIrcCommand { command }
     }
-    pub fn matches_message_text(text: &str) -> Option<String> {
+    pub fn matches_message_text(&self, text: &str) -> Option<String> {
         for cap in Regex::new(r"irc (.*)").unwrap().captures_iter(text) {
             debug!("SendToIrcCommand captures {:#?}", &cap[1]);
             return Some(String::from(&cap[1]));
         }
-        return None
+        return None;
     }
 }
 
 impl Command for SendToIrcCommand {
     fn execute(&self, msg: &Message, irc_sender: Sender<Message>, _: Sender<Message>) {
-        self.command.to_irc(msg, irc_sender);
+        match msg.from_transport {
+            TransportType::IRC => {}
+            TransportType::Telegram => {
+                self.command.to_irc(msg, irc_sender);
+            }
+        }
     }
 }
 
@@ -84,19 +93,23 @@ impl SendToTelegramCommand {
     pub fn new(command: MessageAsCommand) -> SendToTelegramCommand {
         SendToTelegramCommand { command }
     }
-    pub fn matches_message_text(text: &str) -> Option<String> {
-        for cap in Regex::new(r"irc (.*)").unwrap().captures_iter(text) {
+    pub fn matches_message_text(&self, text: &str) -> Option<String> {
+        for cap in Regex::new(r"tg (.*)").unwrap().captures_iter(text) {
             debug!("SendToTelegramCommand captures {:#?}", &cap[1]);
             return Some(String::from(&cap[1]));
         }
-        return None
+        return None;
     }
 }
 
 impl Command for SendToTelegramCommand {
     fn execute(&self, msg: &Message, _: Sender<Message>, tg_sender: Sender<Message>) {
-        debug!("Command::execute with {:#?}", msg);
-        self.command.to_telegram(msg, tg_sender);
+        match msg.from_transport {
+            TransportType::IRC => {
+                self.command.to_telegram(msg, tg_sender);
+            }
+            TransportType::Telegram => {}
+        }
     }
 }
 
@@ -117,4 +130,3 @@ impl<'a> CommandDispatcher<'a> {
         self.command.execute(msg, irc_sender, tg_sender);
     }
 }
-
