@@ -1,0 +1,18 @@
+[Unit]
+Description=Holysee Bot
+After=docker.service dnsdock.service hub.service
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=0
+Environment="DOCKER_IMAGE=hub.crisidev.org/crisidev/holysee"
+Environment="DOCKER_NAME=holysee"
+ExecStartPre=-/usr/bin/docker kill $DOCKER_NAME
+ExecStartPre=-/usr/bin/docker rm $DOCKER_NAME
+ExecStartPre=/usr/bin/docker pull $DOCKER_IMAGE
+ExecStart=/usr/bin/docker run --rm --name $DOCKER_NAME \
+  -e DNSDOCK_IMAGE=${DNSDOCK_NAME} $DOCKER_IMAGE
+ExecStop=/usr/bin/docker stop $DOCKER_NAME
+
+[Install]
+WantedBy=multi-user.target
