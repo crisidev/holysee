@@ -21,7 +21,8 @@ mod commands;
 use std::process;
 use settings::Settings;
 use message::Message;
-use commands::{CommandDispatcher, SendToTelegramCommand, SendToIrcCommand, MessageAsCommand};
+use commands::{CommandDispatcher, MessageAsCommand, SendToTelegramCommand, SendToIrcCommand,
+               KarmaCommand};
 
 use std::sync::mpsc::RecvError;
 use std::sync::mpsc;
@@ -78,21 +79,29 @@ fn main() {
         let message_as_command = MessageAsCommand::new();
         let send_to_irc_command = SendToIrcCommand::new(message_as_command);
         let send_to_tg_command = SendToTelegramCommand::new(message_as_command);
+        let karma_command = KarmaCommand::new(message_as_command);
 
-        if send_to_tg_command
-            .matches_message_text(&current_message.text.clone())
-            .is_some() || settings.telegram.allow_receive
+        if karma_command
+            .matches_message_text(&current_message.text)
+            .is_some()
+        {
+            debug!("karma evaluation");
+            command_dispatcher.set_command(Box::new(karma_command));
+            command_dispatcher.execute(&current_message, &irc_sender, &tg_sender);
+        } else if send_to_tg_command
+                   .matches_message_text(&current_message.text)
+                   .is_some() || settings.telegram.allow_receive
         {
             debug!("send to TELEGRAM");
             command_dispatcher.set_command(Box::new(send_to_tg_command));
-            command_dispatcher.execute(&current_message, irc_sender.clone(), tg_sender.clone());
+            command_dispatcher.execute(&current_message, &irc_sender, &tg_sender);
         } else if send_to_irc_command
-                   .matches_message_text(&current_message.text.clone())
+                   .matches_message_text(&current_message.text)
                    .is_some() || settings.irc.allow_receive
         {
             debug!("send to IRC");
             command_dispatcher.set_command(Box::new(send_to_irc_command));
-            command_dispatcher.execute(&current_message, irc_sender.clone(), tg_sender.clone());
+            command_dispatcher.execute(&current_message, &irc_sender, &tg_sender);
         } else {
             debug!("unknown message");
         }
