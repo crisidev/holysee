@@ -14,6 +14,7 @@ tokio-core = "0.1"
 futures = "0.1"
 rand = "0.3"
 regex = "0.2"
+chan = "0.1"
 
 telegram-bot = { version = "0.5", path = "../vendor/telegram-bot-edge/lib" }
 clippy = {version = "*", optional = true}
