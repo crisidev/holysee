@@ -5,7 +5,7 @@ use self::regex::Regex;
 #[derive(Debug)]
 pub enum TransportType {
     IRC,
-    Telegram
+    Telegram,
 }
 
 #[derive(Debug)]
@@ -17,9 +17,10 @@ pub struct Message {
 }
 
 impl Message {
-    pub fn format(&self) -> String {
-        // remove command if present
-        let re = Regex::new(r"!\w+\s").unwrap();
-        format!("{}: {}", self.from, re.replace_all(&self.text, ""))
+    // TODO: sanitize this senseless abuse
+    // TODO: handle symbol command for command name
+    pub fn strip_command(&self, command_prefix: &String) -> String {
+        let re = Regex::new(format!(r"({})\w+\s", command_prefix).as_ref()).unwrap();
+        format!("{}", re.replace_all(&self.text, ""))
     }
 }

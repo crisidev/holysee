@@ -21,7 +21,7 @@ pub mod client {
             let current: Option<Message> = from_main_queue.recv();
             match current {
                 Some(msg) => {
-                    core.run(api.send(SendMessage::new(chat, msg.format())))
+                    core.run(api.send(SendMessage::new(chat, msg.text.as_ref())))
                         .unwrap();
                 }
                 None => {
@@ -51,12 +51,12 @@ pub mod client {
                                             match u.last_name {
                                                 Some(last_name) => {
                                                     format!("{} {}", u.first_name, last_name)
-                                                },
-                                                None => u.first_name
+                                                }
+                                                None => u.first_name,
                                             }
                                         }
                                     }
-                                },
+                                }
                                 // user is not present, should never happen
                                 None => String::from("unset"),
                             };

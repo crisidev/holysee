@@ -19,7 +19,7 @@ pub mod client {
             let current: Option<Message> = from_main_queue.recv();
             match current {
                 Some(msg) => {
-                    match server.send_privmsg(&channel_name, msg.format().as_ref()) {
+                    match server.send_privmsg(&channel_name, msg.text.as_ref()) {
                         Ok(_) => {
                             info!("Message sent");
                         }
