@@ -5,7 +5,7 @@ use self::regex::Regex;
 #[derive(Debug)]
 pub enum TransportType {
     IRC,
-    Telegram,
+    Telegram
 }
 
 #[derive(Debug)]

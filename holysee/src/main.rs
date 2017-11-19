@@ -21,7 +21,7 @@ mod commands;
 use std::process;
 use settings::Settings;
 use message::Message;
-use commands::{CommandDispatcher, MessageAsCommand, SendToTelegramCommand, SendToIrcCommand,
+use commands::{CommandDispatcher, RelayMessageCommand,
                KarmaCommand};
 
 fn main() {
@@ -42,9 +42,13 @@ fn main() {
     let irc_client = ircclient::client::new(&settings, to_irc.clone());
     let telegram_client = telegram::client::new(&settings, to_telegram.clone());
 
-    info!("Starting up");
+    info!("Starting Holysee");
 
-    let mut command_dispatcher = CommandDispatcher::new();
+
+    let command_prefix_clone = settings.command_prefix.clone();
+    let irc_allow_receive_clone = settings.irc.allow_receive.clone();
+    let telegram_allow_receive_clone = settings.telegram.allow_receive.clone();
+    let mut command_dispatcher = CommandDispatcher::new(command_prefix_clone);
 
     loop {
         let current_message: Message;
@@ -73,34 +77,20 @@ fn main() {
             }
         }
 
-        let message_as_command = MessageAsCommand::new();
-        let send_to_irc_command = SendToIrcCommand::new(message_as_command);
-        let send_to_telegram_command = SendToTelegramCommand::new(message_as_command);
-        let karma_command = KarmaCommand::new(message_as_command);
+        debug!("Current message: {:#?}", current_message);
 
-        if karma_command
-            .matches_message_text(&current_message.text)
-            .is_some()
+        let relay_command = RelayMessageCommand::new(irc_allow_receive_clone, telegram_allow_receive_clone);
+        let karma_command = KarmaCommand::new();
+
+        if karma_command.matches_message_text(&current_message)
         {
-            debug!("karma evaluation");
             command_dispatcher.set_command(Box::new(karma_command));
-            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-        } else if send_to_telegram_command
-                   .matches_message_text(&current_message.text)
-                   .is_some() || settings.telegram.allow_receive
+            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
+        }
+        if relay_command.matches_message_text(&current_message)
         {
-            debug!("send to TELEGRAM");
-            command_dispatcher.set_command(Box::new(send_to_telegram_command));
+            command_dispatcher.set_command(Box::new(relay_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-        } else if send_to_irc_command
-                   .matches_message_text(&current_message.text)
-                   .is_some() || settings.irc.allow_receive
-        {
-            debug!("send to IRC");
-            command_dispatcher.set_command(Box::new(send_to_irc_command));
-            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-        } else {
-            debug!("unknown message");
         }
     }
 }
