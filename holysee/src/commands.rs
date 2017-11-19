@@ -50,7 +50,7 @@ impl RelayMessageCommand {
                 }
             }
         };
-        let re = Regex::new(r"^![irc|tg] (.*)$").unwrap();
+        let re = Regex::new(r"^!(irc|tg) (.*)$").unwrap();
         re.is_match(&message.text)
     }
 }
