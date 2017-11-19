@@ -2,18 +2,20 @@ pub mod client {
     extern crate futures;
     extern crate telegram_bot;
     extern crate tokio_core;
+    extern crate chan;
 
     use self::futures::Stream;
     use settings::Settings;
     use message::{Message, TransportType};
     use std::thread;
-    use std::sync::mpsc::{channel, Sender};
+    use chan::{Sender};
     use self::telegram_bot::Api;
     use self::telegram_bot::types::{ChatId, MessageKind, SendMessage, UpdateKind};
     use self::tokio_core::reactor::Core;
 
     pub fn new(settings: &Settings, to_int_sender_obj: Sender<Message>) -> Sender<Message> {
-        let (return_sender, from_int_reader) = channel::<Message>();
+        // TODO fix this hardcoded value
+        let (return_sender, from_int_reader) = chan::sync(100);
 
         info!("Created telegram client");
         debug!("Running from configuration: {:?}", settings);
@@ -50,7 +52,6 @@ pub mod client {
                                         to: String::from("-"),
                                         text: data,
                                     })
-                                    .unwrap()
                             }
                             _ => {
                                 debug!("messageKind != text");
@@ -74,13 +75,14 @@ pub mod client {
             let api = Api::configure(&token_clone).build(core.handle());
             let chat = ChatId::new(chat_id);
             loop {
-                match from_int_reader.recv() {
-                    Ok(msg) => {
+                let current: Option<Message> = from_int_reader.recv();
+                match  current {
+                    Some(msg) => {
                         core.run(api.send(SendMessage::new(chat, msg.format())))
                             .unwrap();
                     }
-                    Err(e) => {
-                        info!("Error reading from internal channel: {}", e);
+                    None => {
+                        info!("No message to read on internal channel");
                     }
                 };
             }

@@ -11,6 +11,8 @@ extern crate serde_derive;
 
 extern crate futures;
 extern crate tokio_core;
+#[macro_use]
+extern crate chan;
 
 mod ircclient;
 mod telegram;
@@ -24,10 +26,6 @@ use message::Message;
 use commands::{CommandDispatcher, MessageAsCommand, SendToTelegramCommand, SendToIrcCommand,
                KarmaCommand};
 
-use std::sync::mpsc::RecvError;
-use std::sync::mpsc;
-
-
 fn main() {
     pretty_env_logger::init().unwrap();
 
@@ -39,8 +37,9 @@ fn main() {
         }
     };
 
-    let (sender_for_irc, from_irc) = mpsc::channel::<Message>();
-    let (sender_for_tg, from_tg) = mpsc::channel::<Message>();
+    // TODO: fix this hardcoded value
+    let (sender_for_irc, from_irc) = chan::sync(100);
+    let (sender_for_tg, from_tg) = chan::sync(100);
 
     let irc_sender = ircclient::client::new(&settings, sender_for_irc.clone());
     let tg_sender = telegram::client::new(&settings, sender_for_tg.clone());
@@ -51,24 +50,24 @@ fn main() {
 
     loop {
         let current_message: Message;
-        select! {
-            irc_answer = from_irc.recv() => {
+        chan_select! {
+            from_irc.recv() -> irc_answer => {
                 match irc_answer {
-                    Ok(msg) => {
+                    Some(msg) => {
                         current_message = msg;
                     },
-                    Err(RecvError) => {
+                    None => {
                         error!("Channel disconnected!");
                         continue
                     },
                 };
             },
-            tg_answer = from_tg.recv() => {
+            from_tg.recv() -> tg_answer => {
                 match tg_answer {
-                    Ok(msg) => {
+                    Some(msg) => {
                         current_message = msg;
                     },
-                    Err(RecvError) => {
+                    None => {
                         error!("Channel disconnected!");
                         continue
                     },

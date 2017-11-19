@@ -2,7 +2,7 @@ extern crate regex;
 
 
 use message::{Message, TransportType};
-use std::sync::mpsc::Sender;
+use chan::Sender;
 use std::collections::HashMap;
 
 use self::regex::Regex;
@@ -40,8 +40,7 @@ impl MessageAsCommand {
                 from: msg.from.clone(),
                 to: msg.to.clone(),
                 from_transport: TransportType::Telegram,
-            })
-            .unwrap();
+            });
     }
     pub fn to_telegram(&self, msg: &Message, tg_sender: &Sender<Message>) {
         debug!("MessageAsCommand::to_telegram");
@@ -51,8 +50,7 @@ impl MessageAsCommand {
                 from: msg.from.clone(),
                 to: msg.to.clone(),
                 from_transport: TransportType::IRC,
-            })
-            .unwrap();
+            });
     }
 }
 
