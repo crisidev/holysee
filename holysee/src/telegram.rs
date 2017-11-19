@@ -19,7 +19,7 @@ pub mod client {
         let chat = ChatId::new(chat_id);
         loop {
             let current: Option<Message> = from_main_queue.recv();
-            match  current {
+            match current {
                 Some(msg) => {
                     core.run(api.send(SendMessage::new(chat, msg.format())))
                         .unwrap();
@@ -53,13 +53,12 @@ pub mod client {
                                 })
                                 .unwrap_or(String::from("unset"));
                             debug!("entities: {:#?} from: {}", entities, from);
-                            to_main_queue
-                                .send(Message {
-                                    from_transport: TransportType::Telegram,
-                                    from: from,
-                                    to: String::from("-"),
-                                    text: data,
-                                })
+                            to_main_queue.send(Message {
+                                from_transport: TransportType::Telegram,
+                                from: from,
+                                to: String::from("-"),
+                                text: data,
+                            })
                         }
                         _ => {
                             debug!("messageKind != text");
@@ -87,7 +86,9 @@ pub mod client {
         let chat_id = settings.telegram.chat_id.clone();
 
         thread::spawn(move || telegram_to_main_loop(&to_main_queue, &token));
-        thread::spawn(move || main_to_telegram_loop(&from_main_queue, &token_clone, chat_id));
+        thread::spawn(move || {
+            main_to_telegram_loop(&from_main_queue, &token_clone, chat_id)
+        });
 
         to_telegram_queue.clone()
     }

@@ -1,4 +1,3 @@
-#![feature(mpsc_select)]
 #![cfg_attr(feature = "clippy", feature(plugin))]
 #![cfg_attr(feature = "clippy", plugin(clippy))]
 extern crate config;
@@ -8,7 +7,6 @@ extern crate pretty_env_logger;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
-
 extern crate futures;
 extern crate tokio_core;
 #[macro_use]
@@ -38,11 +36,11 @@ fn main() {
     };
 
     // TODO: fix this hardcoded value
-    let (sender_for_irc, from_irc) = chan::sync(100);
-    let (sender_for_tg, from_tg) = chan::sync(100);
+    let (to_irc, from_irc) = chan::sync(100);
+    let (to_telegram, from_telegram) = chan::sync(100);
 
-    let irc_sender = ircclient::client::new(&settings, sender_for_irc.clone());
-    let tg_sender = telegram::client::new(&settings, sender_for_tg.clone());
+    let irc_client = ircclient::client::new(&settings, to_irc.clone());
+    let telegram_client = telegram::client::new(&settings, to_telegram.clone());
 
     info!("Starting up");
 
@@ -62,8 +60,8 @@ fn main() {
                     },
                 };
             },
-            from_tg.recv() -> tg_answer => {
-                match tg_answer {
+            from_telegram.recv() -> telegram_answer => {
+                match telegram_answer {
                     Some(msg) => {
                         current_message = msg;
                     },
@@ -77,7 +75,7 @@ fn main() {
 
         let message_as_command = MessageAsCommand::new();
         let send_to_irc_command = SendToIrcCommand::new(message_as_command);
-        let send_to_tg_command = SendToTelegramCommand::new(message_as_command);
+        let send_to_telegram_command = SendToTelegramCommand::new(message_as_command);
         let karma_command = KarmaCommand::new(message_as_command);
 
         if karma_command
@@ -86,21 +84,21 @@ fn main() {
         {
             debug!("karma evaluation");
             command_dispatcher.set_command(Box::new(karma_command));
-            command_dispatcher.execute(&current_message, &irc_sender, &tg_sender);
-        } else if send_to_tg_command
+            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
+        } else if send_to_telegram_command
                    .matches_message_text(&current_message.text)
                    .is_some() || settings.telegram.allow_receive
         {
             debug!("send to TELEGRAM");
-            command_dispatcher.set_command(Box::new(send_to_tg_command));
-            command_dispatcher.execute(&current_message, &irc_sender, &tg_sender);
+            command_dispatcher.set_command(Box::new(send_to_telegram_command));
+            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         } else if send_to_irc_command
                    .matches_message_text(&current_message.text)
                    .is_some() || settings.irc.allow_receive
         {
             debug!("send to IRC");
             command_dispatcher.set_command(Box::new(send_to_irc_command));
-            command_dispatcher.execute(&current_message, &irc_sender, &tg_sender);
+            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         } else {
             debug!("unknown message");
         }

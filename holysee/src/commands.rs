@@ -34,23 +34,21 @@ impl MessageAsCommand {
 
     pub fn to_irc(&self, msg: &Message, irc_sender: &Sender<Message>) {
         debug!("MessageAsCommand::to_irc");
-        irc_sender
-            .send(Message {
-                text: msg.text.clone(),
-                from: msg.from.clone(),
-                to: msg.to.clone(),
-                from_transport: TransportType::Telegram,
-            });
+        irc_sender.send(Message {
+            text: msg.text.clone(),
+            from: msg.from.clone(),
+            to: msg.to.clone(),
+            from_transport: TransportType::Telegram,
+        });
     }
     pub fn to_telegram(&self, msg: &Message, tg_sender: &Sender<Message>) {
         debug!("MessageAsCommand::to_telegram");
-        tg_sender
-            .send(Message {
-                text: msg.text.clone(),
-                from: msg.from.clone(),
-                to: msg.to.clone(),
-                from_transport: TransportType::IRC,
-            });
+        tg_sender.send(Message {
+            text: msg.text.clone(),
+            from: msg.from.clone(),
+            to: msg.to.clone(),
+            from_transport: TransportType::IRC,
+        });
     }
 }
 
@@ -120,13 +118,17 @@ pub struct KarmaCommand<'a> {
 
 impl<'a> KarmaCommand<'a> {
     pub fn new(command: MessageAsCommand) -> KarmaCommand<'a> {
-        KarmaCommand{
+        KarmaCommand {
             command,
             karma: HashMap::new(),
         }
     }
     pub fn matches_message_text(&self, text: &str) -> Option<String> {
-        for cap in Regex::new(r"(^!karma (.*)$|^viva (.*)$|^(\w+)\+\+$|^abbasso (.*)$|^(\w+)\-\-$)").unwrap().captures_iter(text) {
+        for cap in Regex::new(
+            r"(^!karma (.*)$|^viva (.*)$|^(\w+)\+\+$|^abbasso (.*)$|^(\w+)\-\-$)",
+        ).unwrap()
+            .captures_iter(text)
+        {
             debug!("KarmaCommand captures {:#?}", &cap[1]);
             return Some(String::from(&cap[1]));
         }
