@@ -39,19 +39,27 @@ pub mod client {
                 UpdateKind::Message(m) => {
                     match m.kind {
                         MessageKind::Text { data, entities } => {
-                            let from: String = m.from
-                                .clone()
-                                .and_then(|u| {
-                                    u.username.clone().or_else(|| {
-                                        u.last_name
-                                            .clone()
-                                            .and_then(
-                                                |ln| Some(format!("{:?} {:?}", u.first_name, ln)),
-                                            )
-                                            .or_else(|| Some(u.first_name.clone()))
-                                    })
-                                })
-                                .unwrap_or(String::from("unset"));
+                            let from: String = match m.from {
+                                // user is present, check its fields
+                                Some(u) => {
+                                    match u.username {
+                                        // if username is provided, use it
+                                        Some(username) => username,
+                                        // if username is not provided, try telegram profile names
+                                        None => {
+                                            // first_name always contains something
+                                            match u.last_name {
+                                                Some(last_name) => {
+                                                    format!("{} {}", u.first_name, last_name)
+                                                },
+                                                None => u.first_name
+                                            }
+                                        }
+                                    }
+                                },
+                                // user is not present, should never happen
+                                None => String::from("unset"),
+                            };
                             debug!("entities: {:#?} from: {}", entities, from);
                             to_main_queue.send(Message {
                                 from_transport: TransportType::Telegram,
