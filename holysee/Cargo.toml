@@ -5,17 +5,17 @@ authors = ["Bigo <bigo@crisidev.org>, Uovobw <uovobw@gmail.com"]
 
 [dependencies]
 config = "0.6"
-serde = "1.0.17"
-serde_derive = "1.0.17"
-log = "0.3.8"
-pretty_env_logger = "0.1.1"
-irc = "0.12.5"
-tokio-core = "0.1.10"
-futures = "0.1.17"
-rand = "0.3.17"
-regex = "0.2.2"
+serde = "1.0"
+serde_derive = "1.0"
+log = "0.3"
+pretty_env_logger = "0.1"
+irc = "0.12"
+tokio-core = "0.1"
+futures = "0.1"
+rand = "0.3"
+regex = "0.2"
 
-telegram-bot = { version = "0.5.0", path = "../vendor/telegram-bot-edge/lib" }
+telegram-bot = { version = "0.5", path = "../vendor/telegram-bot-edge/lib" }
 clippy = {version = "*", optional = true}
 
 [features]
