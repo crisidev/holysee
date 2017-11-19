@@ -8,15 +8,10 @@ rust:
   - stable
   - beta
   - nightly
-matrix:
-  allow_failures:
-    - rust: stable
-    - rust: beta
 notifications:
   irc:
     channels:
-      - "chat.freenode.net##altri"
       - "chat.freenode.net##holysee"
-    on_success: always # default: always
-    on_failure: always # default: always
+    on_success: always
+    on_failure: always
     use_notice: true
