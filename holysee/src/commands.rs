@@ -122,7 +122,7 @@ pub struct KarmaCommand<'a> {
 
 impl<'a> KarmaCommand<'a> {
     pub fn new(command: MessageAsCommand) -> KarmaCommand<'a> {
-        KarmaCommand{ 
+        KarmaCommand{
             command,
             karma: HashMap::new(),
         }
@@ -137,7 +137,7 @@ impl<'a> KarmaCommand<'a> {
 }
 
 impl<'a> Command for KarmaCommand<'a> {
-    fn execute(&self, msg: &Message, irc_sender: &Sender<Message>, tg_sender: &Sender<Message>) {}
+    fn execute(&self, _: &Message, _: &Sender<Message>, _: &Sender<Message>) {}
 }
 
 pub struct CommandDispatcher<'a> {
