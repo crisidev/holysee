@@ -84,7 +84,7 @@ impl<'a> KarmaCommand<'a> {
         }
     }
 
-    fn edit(&mut self, cap: &Captures, value: i64) -> String {
+    fn update(&mut self, cap: &Captures, value: i64) -> String {
         let mut karma_irc = String::new();
         for group in cap.iter().skip(1) {
             match group {
@@ -118,11 +118,11 @@ impl<'a> Command for KarmaCommand<'a> {
         }
         for cap in re_increase.captures_iter(&msg.text) {
             debug!("karma increase for captures {:#?}", cap);
-            karma_irc = self.edit(&cap, 1);
+            karma_irc = self.update(&cap, 1);
         }
         for cap in re_decrease.captures_iter(&msg.text) {
             debug!("karma decrease for captures {:#?}", cap);
-            karma_irc = self.edit(&cap, -1);
+            karma_irc = self.update(&cap, -1);
         }
 
         // SEND MESSAGES

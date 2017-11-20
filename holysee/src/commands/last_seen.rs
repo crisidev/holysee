@@ -88,7 +88,9 @@ impl<'a> LastSeenCommand<'a> {
     }
 
     fn see(&mut self, who: &str) {
-        *(self.last_seen.entry(who.to_owned()).or_insert(Local::now().timestamp())) = Local::now().timestamp();
+        *(self.last_seen.entry(who.to_owned()).or_insert(
+            Local::now().timestamp(),
+        )) = Local::now().timestamp();
         self.write_database();
     }
 }

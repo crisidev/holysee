@@ -35,9 +35,7 @@ impl<'a> CommandDispatcher<'a> {
     }
 
     pub fn is_command_enabled(&self, command: &str) -> bool {
-        self.enabled_commands
-            .into_iter()
-            .any(|x| x == command)
+        self.enabled_commands.into_iter().any(|x| x == command)
     }
 
     pub fn set_command(&mut self, cmd: Box<Command + 'a>) {
