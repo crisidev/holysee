@@ -88,8 +88,7 @@ fn main() {
         if karma_command.matches_message_text(&current_message) {
             command_dispatcher.set_command(Box::new(karma_command));
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        }
-        if relay_command.matches_message_text(&current_message) {
+        } else if relay_command.matches_message_text(&current_message) {
             command_dispatcher.set_command(Box::new(relay_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         }
