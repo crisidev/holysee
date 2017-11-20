@@ -8,4 +8,6 @@ RUN make install
 
 WORKDIR /usr/src/holysee/holysee
 
+RUN rm -rf ./target
+
 CMD ["holysee"]
