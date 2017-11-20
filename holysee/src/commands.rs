@@ -5,7 +5,7 @@ use message::{Message, TransportType};
 use chan::Sender;
 use std::collections::HashMap;
 use std::fs::File;
-use std::ops::Add;
+use std::fs::OpenOptions;
 
 use self::regex::Regex;
 
@@ -133,6 +133,10 @@ impl Command for KarmaCommand {
         let mut karma_irc = String::new();
         let mut karma_telegram = String::new();
 
+        // BUG: all the regex matching are saving also the full matched text
+        // in the json file, not only the group.
+        // Example after a few tests:
+        // {"asd++":2,"viva niente":2,"niente++":2,"asd--":-1,"niente":3,"asd":2,"niente--":-1}
         for cap in re_get.captures_iter(&msg.text) {
             debug!("Karma request for captures {:#?}", &cap[1]);
             karma_irc = match self.karma.get(&cap[1]) {
@@ -147,9 +151,34 @@ impl Command for KarmaCommand {
                     Some(x) => {
                         *(self.karma.entry(String::from(x.as_str())).or_insert(0)) += 1;
                         karma_irc = match self.karma.get(x.as_str()) {
-                            Some(v) => format!("updated karma for \"{}\": {}", x.as_str(), v),
-                            None => format!("created karma for \"{}\"", x.as_str()),
+                            Some(v) => format!("karma for \"{}\": {}", x.as_str(), v),
+                            None => format!("no karma for \"{}\"", x.as_str()),
                         };
+                        let file = OpenOptions::new()
+                            .write(true)
+                            .open("data/karma.json")
+                            .expect("unable to open file");
+                        serde_json::to_writer(file, &self.karma).unwrap();
+                    }
+                    None => continue,
+                }
+            }
+            karma_telegram = karma_irc.clone();
+        }
+        for cap in re_decrease.captures_iter(&msg.text) {
+            for group in cap.iter() {
+                match group {
+                    Some(x) => {
+                        *(self.karma.entry(String::from(x.as_str())).or_insert(0)) -= 1;
+                        karma_irc = match self.karma.get(x.as_str()) {
+                            Some(v) => format!("karma for \"{}\": {}", x.as_str(), v),
+                            None => format!("no karma for \"{}\"", x.as_str()),
+                        };
+                        let file = OpenOptions::new()
+                            .write(true)
+                            .open("data/karma.json")
+                            .expect("unable to open file");
+                        serde_json::to_writer(file, &self.karma).unwrap();
                     }
                     None => continue,
                 }
