@@ -19,12 +19,23 @@ pub mod client {
             let current: Option<Message> = from_main_queue.recv();
             match current {
                 Some(msg) => {
-                    match server.send_privmsg(channel_name, msg.text.as_ref()) {
-                        Ok(_) => {
-                            info!("Message sent");
+                    if msg.is_from_command {
+                        match server.send_notice(channel_name, msg.text.as_ref()) {
+                            Ok(_) => {
+                                info!("IRC NOTICE sent");
+                            }
+                            Err(_) => {
+                                info!("Could not send, server disconnected");
+                            }
                         }
-                        Err(_) => {
-                            info!("Could not send, server disconnected");
+                    } else {
+                        match server.send_privmsg(channel_name, msg.text.as_ref()) {
+                            Ok(_) => {
+                                info!("IRC PRIVMSG sent");
+                            }
+                            Err(_) => {
+                                info!("Could not send, server disconnected");
+                            }
                         }
                     }
                 }
@@ -35,11 +46,7 @@ pub mod client {
         }
     }
 
-    fn irc_to_main_loop(
-        to_main_queue: &Sender<Message>,
-        server: &IrcServer,
-        channel_name: &str,
-    ) {
+    fn irc_to_main_loop(to_main_queue: &Sender<Message>, server: &IrcServer, channel_name: &str) {
         server
             .for_each_incoming(|m| {
                 let srcnick = match m.source_nickname() {
