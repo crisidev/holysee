@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::fs::OpenOptions;
 
-use self::regex::Regex;
+use self::regex::{Regex, Captures};
 
 pub trait Command {
     fn execute(&mut self, &Message, &Sender<Message>, &Sender<Message>);
@@ -103,23 +103,8 @@ pub struct KarmaCommand {
 
 impl KarmaCommand {
     pub fn new(get_command_prefix: &Fn() -> String) -> KarmaCommand {
-        // load the current known karma
-        // TODO: abstract file name and path
-        let karma = match File::open("data/karma.json") {
-            Ok(f) => match serde_json::from_reader(f) {
-                Ok(k) => k,
-                Err(e) => {
-                    error!("cannot load from file: {}", e);
-                    HashMap::new()
-                },
-            },
-            Err(e) => {
-                error!("cannot open file for reading: {}", e);
-                HashMap::new()
-            },
-        };
         KarmaCommand {
-            karma,
+            karma: KarmaCommand::read_database(),
             command_prefix: String::from(get_command_prefix()),
         }
     }
@@ -131,6 +116,60 @@ impl KarmaCommand {
             ).as_ref(),
         ).unwrap();
         re.is_match(&message.text)
+    }
+
+    fn read_database() -> HashMap<String, i64> {
+        // load the current known karma
+        // TODO: abstract file name and path
+        match File::open("data/karma.json") {
+            Ok(f) => match serde_json::from_reader(f) {
+                Ok(k) => k,
+                Err(e) => {
+                    error!("cannot load from file: {}", e);
+                    HashMap::new()
+                },
+            },
+            Err(e) => {
+                error!("cannot open file for reading: {}", e);
+                HashMap::new()
+            },
+        }
+    }
+
+    fn write_database(&self) {
+        match OpenOptions::new().write(true).open("data/karma.json") {
+            Ok(file) => {
+                match serde_json::to_writer(file, &self.karma) {
+                    Err(e) => error!("cannot serialize file: {}", e),
+                                _ => {},
+                                };
+                            },
+                            Err(e) => error!("cannot open file: {}", e),
+                        };
+    }
+
+    fn get(&self, key: &str) -> String {
+        match self.karma.get(key) {
+            Some(v) => format!("karma for \"{}\": {}", key, v),
+            None => format!("no karma for \"{}\"", key),
+        }
+    }
+
+    fn edit(&mut self, cap: Captures, text: &str, value: i64) -> String {
+        let mut karma_irc = String::new();
+        for group in cap.iter() {
+            match group {
+                Some(x) => {
+                    if x.as_str() != text {
+                        *(self.karma.entry(String::from(x.as_str())).or_insert(0)) += value;
+                        karma_irc = self.get(x.as_str());
+                        self.write_database();
+                    }
+                }
+                None => continue,
+            }
+        }
+        karma_irc
     }
 }
 
@@ -144,60 +183,17 @@ impl Command for KarmaCommand {
         let mut karma_irc = String::new();
         let mut karma_telegram = String::new();
 
-        // BUG: all the regex matching are saving also the full matched text
-        // in the json file, not only the group.
-        // Example after a few tests:
-        // {"asd++":2,"viva niente":2,"niente++":2,"asd--":-1,"niente":3,"asd":2,"niente--":-1}
         for cap in re_get.captures_iter(&msg.text) {
             debug!("Karma request for captures {:#?}", &cap[1]);
-            karma_irc = match self.karma.get(&cap[1]) {
-                Some(v) => format!("karma for \"{}\": {}", &cap[1], v),
-                None => format!("no karma for \"{}\"", &cap[1]),
-            };
+            karma_irc = self.get(&cap[1]);
             karma_telegram = karma_irc.clone();
         }
         for cap in re_increment.captures_iter(&msg.text) {
-            for group in cap.iter() {
-                match group {
-                    Some(x) => {
-                        *(self.karma.entry(String::from(x.as_str())).or_insert(0)) += 1;
-                        karma_irc = match self.karma.get(x.as_str()) {
-                            Some(v) => format!("karma for \"{}\": {}", x.as_str(), v),
-                            None => format!("no karma for \"{}\"", x.as_str()),
-                        };
-                        match OpenOptions::new().write(true).open("data/karma.json") {
-                            Ok(file) => {
-                                match serde_json::to_writer(file, &self.karma) {
-                                    Err(e) => error!("cannot serialize file: {}", e),
-                                    _ => {},
-                                };
-                            },
-                            Err(e) => error!("cannot open file: {}", e),
-                        };
-                    }
-                    None => continue,
-                }
-            }
+            karma_irc = self.edit(cap, &msg.text, 1);
             karma_telegram = karma_irc.clone();
         }
         for cap in re_decrease.captures_iter(&msg.text) {
-            for group in cap.iter() {
-                match group {
-                    Some(x) => {
-                        *(self.karma.entry(String::from(x.as_str())).or_insert(0)) -= 1;
-                        karma_irc = match self.karma.get(x.as_str()) {
-                            Some(v) => format!("karma for \"{}\": {}", x.as_str(), v),
-                            None => format!("no karma for \"{}\"", x.as_str()),
-                        };
-                        let file = OpenOptions::new()
-                            .write(true)
-                            .open("data/karma.json")
-                            .expect("unable to open file");
-                        serde_json::to_writer(file, &self.karma).unwrap();
-                    }
-                    None => continue,
-                }
-            }
+            karma_irc = self.edit(cap, &msg.text, -1);
             karma_telegram = karma_irc.clone();
         }
         to_irc.send(Message {
