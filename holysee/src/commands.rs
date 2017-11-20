@@ -6,6 +6,7 @@ use chan::Sender;
 use std::collections::HashMap;
 use std::fs::File;
 use std::fs::OpenOptions;
+use settings;
 
 use self::regex::{Regex, Captures};
 
@@ -27,33 +28,35 @@ impl Command for NullCommand {
 }
 
 #[derive(Debug)]
-pub struct RelayMessageCommand {
-    irc_allow_receive: bool,
-    telegram_allow_receive: bool,
-    command_prefix: String,
+pub struct RelayMessageCommand<'a> {
+    pub name: String,
+    irc_allow_receive: &'a bool,
+    telegram_allow_receive: &'a bool,
+    command_prefix: &'a String,
 }
 
-impl RelayMessageCommand {
+impl<'a> RelayMessageCommand<'a> {
     pub fn new(
-        irc_allow_receive: bool,
-        telegram_allow_receive: bool,
-        get_command_prefix: &Fn() -> String,
-    ) -> RelayMessageCommand {
+        irc_allow_receive: &'a bool,
+        telegram_allow_receive: &'a bool,
+        command_prefix: &'a String,
+    ) -> RelayMessageCommand<'a> {
         RelayMessageCommand {
+            name: String::from("relay"),
             irc_allow_receive,
             telegram_allow_receive,
-            command_prefix: String::from(get_command_prefix()),
+            command_prefix,
         }
     }
     pub fn matches_message_text(&self, message: &Message) -> bool {
         match message.from_transport {
             TransportType::IRC => {
-                if self.telegram_allow_receive || message.is_from_command {
+                if *self.telegram_allow_receive || message.is_from_command {
                     return true;
                 }
             }
             TransportType::Telegram => {
-                if self.irc_allow_receive || message.is_from_command {
+                if *self.irc_allow_receive || message.is_from_command {
                     return true;
                 }
             }
@@ -65,7 +68,7 @@ impl RelayMessageCommand {
     }
 }
 
-impl Command for RelayMessageCommand {
+impl<'a> Command for RelayMessageCommand<'a> {
     fn execute(
         &mut self,
         msg: &Message,
@@ -80,7 +83,7 @@ impl Command for RelayMessageCommand {
                     msg.strip_command(&self.command_prefix),
                     msg.from.clone(),
                     msg.to.clone(),
-                    msg.is_from_command.clone(),
+                    msg.is_from_command,
                 ));
             }
             TransportType::Telegram => {
@@ -90,7 +93,7 @@ impl Command for RelayMessageCommand {
                     msg.strip_command(&self.command_prefix),
                     msg.from.clone(),
                     msg.to.clone(),
-                    msg.is_from_command.clone(),
+                    msg.is_from_command,
                 ));
             }
         }
@@ -98,16 +101,20 @@ impl Command for RelayMessageCommand {
 }
 
 #[derive(Debug)]
-pub struct KarmaCommand {
+pub struct KarmaCommand<'a> {
+    pub name: String,
     karma: HashMap<String, i64>,
-    command_prefix: String,
+    command_prefix: &'a String,
+    data_dir: &'a String,
 }
 
-impl KarmaCommand {
-    pub fn new(get_command_prefix: &Fn() -> String) -> KarmaCommand {
+impl<'a> KarmaCommand<'a> {
+    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> KarmaCommand<'a> {
         KarmaCommand {
+            name: String::from("karma"),
             karma: KarmaCommand::read_database(),
-            command_prefix: String::from(get_command_prefix()),
+            command_prefix: command_prefix,
+            data_dir: &settings.data_dir,
         }
     }
     pub fn matches_message_text(&self, message: &Message) -> bool {
@@ -175,7 +182,7 @@ impl KarmaCommand {
     }
 }
 
-impl Command for KarmaCommand {
+impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         debug!("karma execute");
         let re_get = Regex::new(format!(r"^(?:{})karma (.*)$", self.command_prefix).as_ref()).unwrap();
@@ -217,16 +224,29 @@ impl Command for KarmaCommand {
 
 pub struct CommandDispatcher<'a> {
     command: Box<Command + 'a>,
+    enabled_commands: &'a Vec<String>,
 }
 
 impl<'a> CommandDispatcher<'a> {
-    pub fn new() -> CommandDispatcher<'a> {
-        CommandDispatcher { command: Box::new(NullCommand::new()) }
+    pub fn new(settings: &'a settings::Commands) -> CommandDispatcher<'a> {
+        CommandDispatcher {
+            command: Box::new(NullCommand::new()),
+            enabled_commands: &settings.enabled,
+        }
     }
+
+    pub fn is_command_enabled(&self, command: &String) -> bool {
+        self.enabled_commands
+            .into_iter()
+            .find(|&x| x == command)
+            .is_some()
+    }
+
     pub fn set_command(&mut self, cmd: Box<Command + 'a>) {
         debug!("set_command in CommandDispatcher");
         self.command = cmd;
     }
+
     pub fn execute(
         &mut self,
         msg: &Message,

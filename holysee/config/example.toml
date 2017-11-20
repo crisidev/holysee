@@ -17,3 +17,9 @@ allow_receive = true
 token = "apikey"
 chat_id = "012345"
 allow_receive = true
+
+[commands]
+data_dir = "./data"
+enabled = [
+    "relay"
+]

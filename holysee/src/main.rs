@@ -43,11 +43,7 @@ fn main() {
 
     info!("Starting Holysee");
 
-    let get_command_prefix = || String::from(settings.command_prefix.clone());
-
-    let irc_allow_receive_clone = settings.irc.allow_receive.clone();
-    let telegram_allow_receive_clone = settings.telegram.allow_receive.clone();
-    let mut command_dispatcher = CommandDispatcher::new();
+    let mut command_dispatcher = CommandDispatcher::new(&settings.commands);
 
     loop {
         let current_message: Message;
@@ -79,16 +75,20 @@ fn main() {
         debug!("Current message: {:#?}", current_message);
 
         let relay_command = RelayMessageCommand::new(
-            irc_allow_receive_clone,
-            telegram_allow_receive_clone,
-            &get_command_prefix,
+            &settings.irc.allow_receive,
+            &settings.telegram.allow_receive,
+            &settings.command_prefix,
         );
-        let karma_command = KarmaCommand::new(&get_command_prefix);
+        let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
 
-        if karma_command.matches_message_text(&current_message) {
+        if command_dispatcher.is_command_enabled(&karma_command.name) &&
+            karma_command.matches_message_text(&current_message)
+        {
             command_dispatcher.set_command(Box::new(karma_command));
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        } else if relay_command.matches_message_text(&current_message) {
+        } else if command_dispatcher.is_command_enabled(&relay_command.name) &&
+                   relay_command.matches_message_text(&current_message)
+        {
             command_dispatcher.set_command(Box::new(relay_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         }

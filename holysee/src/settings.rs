@@ -22,11 +22,18 @@ pub struct Telegram {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct Commands {
+    pub data_dir: String,
+    pub enabled: Vec<String>,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub debug: bool,
     pub command_prefix: String,
     pub irc: Irc,
     pub telegram: Telegram,
+    pub commands: Commands,
 }
 
 impl Settings {
