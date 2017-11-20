@@ -61,12 +61,13 @@ pub mod client {
                                 None => String::from("unset"),
                             };
                             debug!("entities: {:#?} from: {}", entities, from);
-                            to_main_queue.send(Message {
-                                from_transport: TransportType::Telegram,
-                                from: from,
-                                to: String::from("-"),
-                                text: data,
-                            })
+                            to_main_queue.send(Message::new(
+                                TransportType::Telegram,
+                                data,
+                                from,
+                                String::from("-"),
+                                false,
+                            ));
                         }
                         _ => {
                             debug!("messageKind != text");

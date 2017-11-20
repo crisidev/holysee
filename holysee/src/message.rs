@@ -14,9 +14,25 @@ pub struct Message {
     pub text: String,
     pub from: String,
     pub to: String,
+    pub is_from_command: bool,
 }
 
 impl Message {
+    pub fn new(
+        from_transport: TransportType,
+        text: String,
+        from: String,
+        to: String,
+        is_from_command: bool,
+    ) -> Message {
+        Message {
+            from_transport,
+            text,
+            from,
+            to,
+            is_from_command,
+        }
+    }
     // TODO: sanitize this senseless abuse
     // TODO: handle symbol command for command name
     pub fn strip_command(&self, command_prefix: &String) -> String {

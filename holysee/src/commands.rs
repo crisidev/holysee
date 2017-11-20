@@ -48,12 +48,12 @@ impl RelayMessageCommand {
     pub fn matches_message_text(&self, message: &Message) -> bool {
         match message.from_transport {
             TransportType::IRC => {
-                if self.telegram_allow_receive {
+                if self.telegram_allow_receive || message.is_from_command {
                     return true;
                 }
             }
             TransportType::Telegram => {
-                if self.irc_allow_receive {
+                if self.irc_allow_receive || message.is_from_command {
                     return true;
                 }
             }
@@ -75,21 +75,23 @@ impl Command for RelayMessageCommand {
         match msg.from_transport {
             TransportType::IRC => {
                 debug!("MessageAsCommand::to_telegram");
-                telegram_sender.send(Message {
-                    text: msg.strip_command(&self.command_prefix),
-                    from: msg.from.clone(),
-                    to: msg.to.clone(),
-                    from_transport: TransportType::IRC,
-                });
+                telegram_sender.send(Message::new(
+                    TransportType::IRC,
+                    msg.strip_command(&self.command_prefix),
+                    msg.from.clone(),
+                    msg.to.clone(),
+                    msg.is_from_command.clone(),
+                ));
             }
             TransportType::Telegram => {
                 debug!("MessageAsCommand::to_irc");
-                irc_sender.send(Message {
-                    text: msg.strip_command(&self.command_prefix),
-                    from: msg.from.clone(),
-                    to: msg.to.clone(),
-                    from_transport: TransportType::Telegram,
-                });
+                irc_sender.send(Message::new(
+                    TransportType::Telegram,
+                    msg.strip_command(&self.command_prefix),
+                    msg.from.clone(),
+                    msg.to.clone(),
+                    msg.is_from_command.clone(),
+                ));
             }
         }
     }
@@ -196,18 +198,20 @@ impl Command for KarmaCommand {
             karma_irc = self.edit(cap, &msg.text, -1);
             karma_telegram = karma_irc.clone();
         }
-        to_irc.send(Message {
-            from: String::from("KarmaCommand"),
-            text: String::from(karma_irc),
-            from_transport: TransportType::Telegram,
-            to: String::from("karma"),
-        });
-        to_telegram.send(Message {
-            from: String::from("KarmaCommand"),
-            text: String::from(karma_telegram),
-            from_transport: TransportType::IRC,
-            to: String::from("karma"),
-        });
+        to_irc.send(Message::new(
+            TransportType::Telegram,
+            String::from(karma_irc),
+            String::from("KarmaCommand"),
+            String::from("karma"),
+            true,
+        ));
+        to_telegram.send(Message::new(
+            TransportType::IRC,
+            String::from(karma_telegram),
+            String::from("KarmaCommand"),
+            String::from("karma"),
+            true,
+        ));
     }
 }
 

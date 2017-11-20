@@ -54,12 +54,13 @@ pub mod client {
                             message_text,
                             srcnick
                         );
-                        to_main_queue.send(Message {
-                            from_transport: TransportType::IRC,
-                            from: srcnick,
-                            to: source,
-                            text: message_text,
-                        });
+                        to_main_queue.send(Message::new(
+                            TransportType::IRC,
+                            message_text,
+                            srcnick,
+                            source,
+                            false,
+                        ));
                     }
                     irc::proto::Command::INVITE(_, channel) => {
                         debug!("got invite for channel: {}", channel);
