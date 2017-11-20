@@ -21,7 +21,10 @@ mod commands;
 use std::process;
 use settings::Settings;
 use message::Message;
-use commands::{CommandDispatcher, RelayMessageCommand, KarmaCommand, LastSeenCommand};
+use commands::last_seen::LastSeenCommand;
+use commands::relay::RelayMessageCommand;
+use commands::karma::KarmaCommand;
+use commands::command_dispatcher::CommandDispatcher;
 
 fn main() {
     pretty_env_logger::init().unwrap();
