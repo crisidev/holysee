@@ -21,7 +21,7 @@ mod commands;
 use std::process;
 use settings::Settings;
 use message::Message;
-use commands::{CommandDispatcher, RelayMessageCommand, KarmaCommand};
+use commands::{CommandDispatcher, RelayMessageCommand, KarmaCommand, LastSeenCommand};
 
 fn main() {
     pretty_env_logger::init().unwrap();
@@ -80,6 +80,7 @@ fn main() {
             &settings.command_prefix,
         );
         let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
+        let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
 
         if command_dispatcher.is_command_enabled(&karma_command.name) &&
             karma_command.matches_message_text(&current_message)
@@ -90,6 +91,10 @@ fn main() {
                    relay_command.matches_message_text(&current_message)
         {
             command_dispatcher.set_command(Box::new(relay_command));
+            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
+        } else if command_dispatcher.is_command_enabled(&last_seen_command.name) &&
+            last_seen_command.matches_message_text(&current_message) {
+            command_dispatcher.set_command(Box::new(last_seen_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         }
     }
