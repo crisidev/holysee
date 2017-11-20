@@ -164,16 +164,14 @@ impl<'a> KarmaCommand<'a> {
         }
     }
 
-    fn edit(&mut self, cap: Captures, text: &str, value: i64) -> String {
+    fn edit(&mut self, cap: Captures, value: i64) -> String {
         let mut karma_irc = String::new();
-        for group in cap.iter() {
+        for group in cap.iter().skip(1) {
             match group {
                 Some(x) => {
-                    if x.as_str() != text {
                         *(self.karma.entry(String::from(x.as_str())).or_insert(0)) += value;
                         karma_irc = self.get(x.as_str());
                         self.write_database();
-                    }
                 }
                 None => continue,
             }
@@ -186,27 +184,27 @@ impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         debug!("karma execute");
         let re_get = Regex::new(format!(r"^(?:{})karma (.*)$", self.command_prefix).as_ref()).unwrap();
-        let re_increase =  Regex::new(r"^viva (.*)$|^(\w+)\+\+$").unwrap();
-        let re_decrease = Regex::new(r"^abbasso (.*)$|^(\w+)\-\-$").unwrap();
+        let re_increase =  Regex::new(r"^[vV]iva (.*)$|^(\w+)\+\+$").unwrap();
+        let re_decrease = Regex::new(r"^[aA]bbasso (.*)$|^(\w+)\-\-$").unwrap();
 
         let mut karma_irc = String::new();
-        let mut karma_telegram = String::new();
 
+        // COMMAND HANDLING
         for cap in re_get.captures_iter(&msg.text) {
             debug!("karma get for captures {:#?}", cap);
             karma_irc = self.get(&cap[1]);
-            karma_telegram = karma_irc.clone();
         }
         for cap in re_increase.captures_iter(&msg.text) {
             debug!("karma increase for captures {:#?}", cap);
-            karma_irc = self.edit(cap, &msg.text, 1);
-            karma_telegram = karma_irc.clone();
+            karma_irc = self.edit(cap, 1);
         }
         for cap in re_decrease.captures_iter(&msg.text) {
             debug!("karma decrease for captures {:#?}", cap);
-            karma_irc = self.edit(cap, &msg.text, -1);
-            karma_telegram = karma_irc.clone();
+            karma_irc = self.edit(cap, -1);
         }
+
+        // SEND MESSAGES
+        let karma_telegram = karma_irc.clone();
         to_irc.send(Message::new(
             TransportType::Telegram,
             String::from(karma_irc),
