@@ -38,7 +38,7 @@ impl<'a> KarmaCommand<'a> {
         re.is_match(&message.text)
     }
 
-    fn read_database(data_dir: &String, name: &str) -> HashMap<String, i64> {
+    fn read_database(data_dir: &str, name: &str) -> HashMap<String, i64> {
         // load the current known karma
         // TODO: abstract file name and path
         match OpenOptions::new().read(true).open(format!(
@@ -69,9 +69,8 @@ impl<'a> KarmaCommand<'a> {
             &self.name
         )) {
             Ok(file) => {
-                match serde_json::to_writer(file, &self.karma) {
-                    Err(e) => error!("cannot serialize file: {}", e),
-                    _ => {}
+                if let Err(e) = serde_json::to_writer(file, &self.karma) {
+                    error!("cannot serialize file: {}", e)
                 };
             }
             Err(e) => error!("cannot open file: {}", e),
@@ -85,7 +84,7 @@ impl<'a> KarmaCommand<'a> {
         }
     }
 
-    fn edit(&mut self, cap: Captures, value: i64) -> String {
+    fn edit(&mut self, cap: &Captures, value: i64) -> String {
         let mut karma_irc = String::new();
         for group in cap.iter().skip(1) {
             match group {
@@ -119,25 +118,25 @@ impl<'a> Command for KarmaCommand<'a> {
         }
         for cap in re_increase.captures_iter(&msg.text) {
             debug!("karma increase for captures {:#?}", cap);
-            karma_irc = self.edit(cap, 1);
+            karma_irc = self.edit(&cap, 1);
         }
         for cap in re_decrease.captures_iter(&msg.text) {
             debug!("karma decrease for captures {:#?}", cap);
-            karma_irc = self.edit(cap, -1);
+            karma_irc = self.edit(&cap, -1);
         }
 
         // SEND MESSAGES
         let karma_telegram = karma_irc.clone();
         to_irc.send(Message::new(
             TransportType::Telegram,
-            String::from(karma_irc),
+            karma_irc,
             String::from("KarmaCommand"),
             String::from("karma"),
             true,
         ));
         to_telegram.send(Message::new(
             TransportType::IRC,
-            String::from(karma_telegram),
+            karma_telegram,
             String::from("KarmaCommand"),
             String::from("karma"),
             true,

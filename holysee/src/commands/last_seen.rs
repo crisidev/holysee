@@ -66,9 +66,8 @@ impl<'a> LastSeenCommand<'a> {
             &self.name
         )) {
             Ok(file) => {
-                match serde_json::to_writer(file, &self.last_seen) {
-                    Err(e) => error!("cannot serialize file: {}", e),
-                    _ => {}
+                if let Err(e) = serde_json::to_writer(file, &self.last_seen) {
+                    error!("cannot serialize file: {}", e)
                 };
             }
             Err(e) => error!("cannot open file: {}", e),
@@ -88,10 +87,8 @@ impl<'a> LastSeenCommand<'a> {
         }
     }
 
-    fn see(&mut self, who: &String) {
-        *(self.last_seen.entry(String::from(who.clone())).or_insert(
-            Local::now().timestamp(),
-        )) = Local::now().timestamp();
+    fn see(&mut self, who: &str) {
+        *(self.last_seen.entry(who.to_owned()).or_insert(Local::now().timestamp())) = Local::now().timestamp();
         self.write_database();
     }
 }
@@ -112,16 +109,16 @@ impl<'a> Command for LastSeenCommand<'a> {
             let last_seen_telegram = last_seen_irc.clone();
             to_irc.send(Message::new(
                 TransportType::Telegram,
-                String::from(last_seen_irc),
+                last_seen_irc,
                 String::from("LastSeenCommand"),
-                String::from(self.name.clone()),
+                self.name.to_owned(),
                 true,
             ));
             to_telegram.send(Message::new(
                 TransportType::IRC,
-                String::from(last_seen_telegram),
+                last_seen_telegram,
                 String::from("LastSeenCommand"),
-                String::from(self.name.clone()),
+                self.name.to_owned(),
                 true,
             ));
         }

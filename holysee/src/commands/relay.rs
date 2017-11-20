@@ -59,7 +59,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
                 debug!("MessageAsCommand::to_telegram");
                 telegram_sender.send(Message::new(
                     TransportType::IRC,
-                    msg.strip_command(&self.command_prefix),
+                    msg.strip_command(self.command_prefix),
                     msg.from.clone(),
                     msg.to.clone(),
                     msg.is_from_command,
@@ -69,7 +69,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
                 debug!("MessageAsCommand::to_irc");
                 irc_sender.send(Message::new(
                     TransportType::Telegram,
-                    msg.strip_command(&self.command_prefix),
+                    msg.strip_command(self.command_prefix),
                     msg.from.clone(),
                     msg.to.clone(),
                     msg.is_from_command,

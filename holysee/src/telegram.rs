@@ -13,7 +13,7 @@ pub mod client {
     use self::telegram_bot::types::{ChatId, MessageKind, SendMessage, UpdateKind};
     use self::tokio_core::reactor::Core;
 
-    fn main_to_telegram_loop(from_main_queue: &Receiver<Message>, token: &String, chat_id: i64) {
+    fn main_to_telegram_loop(from_main_queue: &Receiver<Message>, token: &str, chat_id: i64) {
         let mut core = Core::new().unwrap();
         let api = Api::configure(token).build(core.handle());
         let chat = ChatId::new(chat_id);
@@ -31,9 +31,9 @@ pub mod client {
         }
     }
 
-    fn telegram_to_main_loop(to_main_queue: &Sender<Message>, token: &String) {
+    fn telegram_to_main_loop(to_main_queue: &Sender<Message>, token: &str) {
         let mut core = Core::new().unwrap();
-        let api = Api::configure(&token).build(core.handle());
+        let api = Api::configure(token).build(core.handle());
         let future = api.stream().for_each(|update| {
             match update.kind {
                 UpdateKind::Message(m) => {
@@ -92,7 +92,7 @@ pub mod client {
 
         let token = settings.telegram.token.clone();
         let token_clone = settings.telegram.token.clone();
-        let chat_id = settings.telegram.chat_id.clone();
+        let chat_id = settings.telegram.chat_id;
 
         thread::spawn(move || telegram_to_main_loop(&to_main_queue, &token));
         thread::spawn(move || {

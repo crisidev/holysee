@@ -13,13 +13,13 @@ pub mod client {
     fn main_to_irc_loop(
         from_main_queue: &Receiver<Message>,
         server: &IrcServer,
-        channel_name: &String,
+        channel_name: &str,
     ) {
         loop {
             let current: Option<Message> = from_main_queue.recv();
             match current {
                 Some(msg) => {
-                    match server.send_privmsg(&channel_name, msg.text.as_ref()) {
+                    match server.send_privmsg(channel_name, msg.text.as_ref()) {
                         Ok(_) => {
                             info!("Message sent");
                         }
@@ -38,7 +38,7 @@ pub mod client {
     fn irc_to_main_loop(
         to_main_queue: &Sender<Message>,
         server: &IrcServer,
-        channel_name: &String,
+        channel_name: &str,
     ) {
         server
             .for_each_incoming(|m| {
@@ -64,7 +64,7 @@ pub mod client {
                     }
                     irc::proto::Command::INVITE(_, channel) => {
                         debug!("got invite for channel: {}", channel);
-                        if channel == *channel_name {
+                        if channel == channel_name {
                             debug!("chosen to join channel {}", channel);
                             server.send_join(&channel).unwrap();
                         }
@@ -73,7 +73,7 @@ pub mod client {
                         debug!("NOTICE: {}", notice);
                         if notice.contains("You are now identified for") {
                             debug!("identified successfully");
-                            server.send_join(&channel_name).unwrap();
+                            server.send_join(channel_name).unwrap();
                         }
                     }
                     irc::proto::Command::MOTD(_) => {}
