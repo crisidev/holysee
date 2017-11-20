@@ -194,8 +194,9 @@ impl<'a> KarmaCommand<'a> {
 impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         debug!("karma execute");
-        let re_get = Regex::new(format!(r"^(?:{})karma\s+(.*)$", self.command_prefix).as_ref())
-            .unwrap();
+        let re_get = Regex::new(
+            format!(r"^(?:{})karma\s+(.*)$", self.command_prefix).as_ref(),
+        ).unwrap();
         let re_increase = Regex::new(r"^[vV]iva\s+(.*)$|^(\w+)\+\+$").unwrap();
         let re_decrease = Regex::new(r"^[aA]bbasso\s+(.*)$|^(\w+)\-\-$").unwrap();
 
@@ -244,7 +245,10 @@ pub struct LastSeenCommand<'a> {
 }
 
 impl<'a> LastSeenCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> LastSeenCommand<'a> {
+    pub fn new(
+        command_prefix: &'a String,
+        settings: &'a settings::Commands,
+    ) -> LastSeenCommand<'a> {
         LastSeenCommand {
             name: String::from("last_seen"),
             last_seen: LastSeenCommand::read_database(&settings.data_dir, "last_seen"),
@@ -297,13 +301,21 @@ impl<'a> LastSeenCommand<'a> {
 
     fn get(&self, key: &str) -> String {
         match self.last_seen.get(key) {
-            Some(v) => format!("last seen \"{}\": {}", key, NaiveDateTime::from_timestamp(*v, 0).format("%Y-%m-%d %H:%M:%S")),
+            Some(v) => {
+                format!(
+                    "last seen \"{}\": {}",
+                    key,
+                    NaiveDateTime::from_timestamp(*v, 0).format("%Y-%m-%d %H:%M:%S")
+                )
+            }
             None => format!("never seen \"{}\"", key),
         }
     }
 
     fn see(&mut self, who: &String) {
-        *(self.last_seen.entry(String::from(who.clone())).or_insert(Local::now().timestamp())) = Local::now().timestamp();
+        *(self.last_seen.entry(String::from(who.clone())).or_insert(
+            Local::now().timestamp(),
+        )) = Local::now().timestamp();
         self.write_database();
     }
 }
@@ -311,7 +323,9 @@ impl<'a> LastSeenCommand<'a> {
 impl<'a> Command for LastSeenCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         debug!("last_seen execute");
-        let re_get = Regex::new(format!(r"^(?:{})seen\s+(.*)$", &self.command_prefix).as_ref()).unwrap();
+        let re_get = Regex::new(
+            format!(r"^(?:{})seen\s+(.*)$", &self.command_prefix).as_ref(),
+        ).unwrap();
 
         // COMMAND HANDLING
         self.see(&msg.from);

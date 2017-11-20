@@ -93,7 +93,8 @@ fn main() {
             command_dispatcher.set_command(Box::new(relay_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         } else if command_dispatcher.is_command_enabled(&last_seen_command.name) &&
-            last_seen_command.matches_message_text(&current_message) {
+                   last_seen_command.matches_message_text(&current_message)
+        {
             command_dispatcher.set_command(Box::new(last_seen_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         }
