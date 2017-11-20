@@ -17,6 +17,7 @@ Cargo.lock
 # vendored ignores
 vendor/*/target
 vendor/*/.idea
+*/data/
 
 # local configuration file
 */config/local.toml
