@@ -105,8 +105,19 @@ impl KarmaCommand {
     pub fn new(get_command_prefix: &Fn() -> String) -> KarmaCommand {
         // load the current known karma
         // TODO: abstract file name and path
-        let file = File::open("data/karma.json").unwrap();
-        let karma = serde_json::from_reader(file).unwrap();
+        let karma = match File::open("data/karma.json") {
+            Ok(f) => match serde_json::from_reader(f) {
+                Ok(k) => k,
+                Err(e) => {
+                    error!("cannot load from file: {}", e);
+                    HashMap::new()
+                },
+            },
+            Err(e) => {
+                error!("cannot open file for reading: {}", e);
+                HashMap::new()
+            },
+        };
         KarmaCommand {
             karma,
             command_prefix: String::from(get_command_prefix()),
@@ -126,7 +137,7 @@ impl KarmaCommand {
 impl Command for KarmaCommand {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         debug!("karma execute");
-        let re_get = Regex::new(format!(r"^{}karma (.*)$", self.command_prefix).as_ref()).unwrap();
+        let re_get = Regex::new(format!(r"^(?:{})karma (.*)$", self.command_prefix).as_ref()).unwrap();
         let re_increment = Regex::new(r"^viva (.*)$|^(\w+)\+\+$").unwrap();
         let re_decrease = Regex::new(r"^abbasso (.*)$|^(\w+)\-\-$").unwrap();
 
@@ -154,11 +165,15 @@ impl Command for KarmaCommand {
                             Some(v) => format!("karma for \"{}\": {}", x.as_str(), v),
                             None => format!("no karma for \"{}\"", x.as_str()),
                         };
-                        let file = OpenOptions::new()
-                            .write(true)
-                            .open("data/karma.json")
-                            .expect("unable to open file");
-                        serde_json::to_writer(file, &self.karma).unwrap();
+                        match OpenOptions::new().write(true).open("data/karma.json") {
+                            Ok(file) => {
+                                match serde_json::to_writer(file, &self.karma) {
+                                    Err(e) => error!("cannot serialize file: {}", e),
+                                    _ => {},
+                                };
+                            },
+                            Err(e) => error!("cannot open file: {}", e),
+                        };
                     }
                     None => continue,
                 }
