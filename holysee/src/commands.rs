@@ -114,7 +114,10 @@ impl KarmaCommand {
     }
     pub fn matches_message_text(&self, message: &Message) -> bool {
         let re = Regex::new(
-            format!(r"(^{}karma (.*)$|^viva (.*)$|^(\w+)\+\+$|^abbasso (.*)$|^(\w+)\-\-$)", self.command_prefix).as_ref()
+            format!(
+                r"(^{}karma (.*)$|^viva (.*)$|^(\w+)\+\+$|^abbasso (.*)$|^(\w+)\-\-$)",
+                self.command_prefix
+            ).as_ref(),
         ).unwrap();
         re.is_match(&message.text)
     }
@@ -134,7 +137,7 @@ impl Command for KarmaCommand {
             debug!("Karma request for captures {:#?}", &cap[1]);
             karma_irc = match self.karma.get(&cap[1]) {
                 Some(v) => format!("karma for \"{}\": {}", &cap[1], v),
-                None => format!("no karma for \"{}\"", &cap[1])
+                None => format!("no karma for \"{}\"", &cap[1]),
             };
             karma_telegram = karma_irc.clone();
         }
@@ -145,9 +148,9 @@ impl Command for KarmaCommand {
                         *(self.karma.entry(String::from(x.as_str())).or_insert(0)) += 1;
                         karma_irc = match self.karma.get(x.as_str()) {
                             Some(v) => format!("updated karma for \"{}\": {}", x.as_str(), v),
-                            None => format!("created karma for \"{}\"", x.as_str())
+                            None => format!("created karma for \"{}\"", x.as_str()),
                         };
-                    },
+                    }
                     None => continue,
                 }
             }
