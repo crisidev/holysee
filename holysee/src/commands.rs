@@ -186,22 +186,24 @@ impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         debug!("karma execute");
         let re_get = Regex::new(format!(r"^(?:{})karma (.*)$", self.command_prefix).as_ref()).unwrap();
-        let re_increment = Regex::new(r"^viva (.*)$|^(\w+)\+\+$").unwrap();
+        let re_increase =  Regex::new(r"^viva (.*)$|^(\w+)\+\+$").unwrap();
         let re_decrease = Regex::new(r"^abbasso (.*)$|^(\w+)\-\-$").unwrap();
 
         let mut karma_irc = String::new();
         let mut karma_telegram = String::new();
 
         for cap in re_get.captures_iter(&msg.text) {
-            debug!("Karma request for captures {:#?}", &cap[1]);
+            debug!("karma get for captures {:#?}", cap);
             karma_irc = self.get(&cap[1]);
             karma_telegram = karma_irc.clone();
         }
-        for cap in re_increment.captures_iter(&msg.text) {
+        for cap in re_increase.captures_iter(&msg.text) {
+            debug!("karma increase for captures {:#?}", cap);
             karma_irc = self.edit(cap, &msg.text, 1);
             karma_telegram = karma_irc.clone();
         }
         for cap in re_decrease.captures_iter(&msg.text) {
+            debug!("karma decrease for captures {:#?}", cap);
             karma_irc = self.edit(cap, &msg.text, -1);
             karma_telegram = karma_irc.clone();
         }
