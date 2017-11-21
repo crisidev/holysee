@@ -92,8 +92,8 @@ impl<'a> QuoteCommand<'a> {
     }
 
     fn get(&self) -> String {
-        if self.quotes.len() == 0 {
-            return String::from("No quotes in the database")
+        if self.quotes.is_empty() {
+            return String::from("No quotes in the database");
         }
         let mut rng = rand::thread_rng();
         let range = Range::new(0, self.quotes.len());

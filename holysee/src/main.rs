@@ -26,6 +26,7 @@ use commands::relay::RelayMessageCommand;
 use commands::karma::KarmaCommand;
 use commands::command_dispatcher::CommandDispatcher;
 use commands::quote::QuoteCommand;
+use commands::url_preview::UrlPreviewCommand;
 
 fn main() {
     pretty_env_logger::init().unwrap();
@@ -88,15 +89,19 @@ fn main() {
         let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
         let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
         let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
+        let url_preview_command = UrlPreviewCommand::new();
 
-        // last_seen command (needs to be called always if enabled)
-        if command_dispatcher.is_command_enabled(&last_seen_command.name) &&
-            last_seen_command.matches_message_text(&current_message)
-        {
+        // FILTERS
+        if command_dispatcher.is_command_enabled(&last_seen_command.name) {
             command_dispatcher.set_command(Box::new(last_seen_command));
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
         }
+        if command_dispatcher.is_command_enabled(&url_preview_command.name) {
+            command_dispatcher.set_command(Box::new(url_preview_command));
+            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
+        }
 
+        // COMMANDS
         // karma command
         if command_dispatcher.is_command_enabled(&karma_command.name) &&
             karma_command.matches_message_text(&current_message)
@@ -109,7 +114,7 @@ fn main() {
         {
             command_dispatcher.set_command(Box::new(quote_command));
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        // relay command
+            // relay command
         } else if command_dispatcher.is_command_enabled(&relay_command.name) &&
                    relay_command.matches_message_text(&current_message)
         {

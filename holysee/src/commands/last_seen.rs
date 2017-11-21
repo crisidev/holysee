@@ -40,9 +40,6 @@ impl<'a> LastSeenCommand<'a> {
             data_dir: &settings.data_dir,
         }
     }
-    pub fn matches_message_text(&self, _: &Message) -> bool {
-        true
-    }
 
     fn read_database(data_dir: &String, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
         let file = OpenOptions::new().read(true).open(format!(
