@@ -114,7 +114,7 @@ fn main() {
         {
             command_dispatcher.set_command(Box::new(quote_command));
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-            // relay command
+        // relay command
         } else if command_dispatcher.is_command_enabled(&relay_command.name) &&
                    relay_command.matches_message_text(&current_message)
         {

@@ -61,7 +61,7 @@ impl Command for UrlPreviewCommand {
                             ));
                         });
                     }
-                },
+                }
                 Err(e) => {
                     error!("Error previewing: {}", e);
                 }
