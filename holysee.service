@@ -7,6 +7,7 @@ Restart=on-failure
 TimeoutStartSec=0
 Environment="DOCKER_IMAGE=hub.crisidev.org/crisidev/holysee"
 Environment="DOCKER_NAME=holysee"
+Environment="RUST_LOG=holysee=info"
 ExecStartPre=-/usr/bin/docker kill $DOCKER_NAME
 ExecStartPre=-/usr/bin/docker rm $DOCKER_NAME
 ExecStartPre=/usr/bin/docker pull $DOCKER_IMAGE
