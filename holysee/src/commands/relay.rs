@@ -56,7 +56,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
     ) {
         match msg.from_transport {
             TransportType::IRC => {
-                debug!("MessageAsCommand::to_telegram");
+                debug!("Sending message to Telegram chan");
                 telegram_sender.send(Message::new(
                     TransportType::IRC,
                     msg.strip_command(self.command_prefix),
@@ -66,7 +66,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
                 ));
             }
             TransportType::Telegram => {
-                debug!("MessageAsCommand::to_irc");
+                debug!("Sending message to IRC chan");
                 irc_sender.send(Message::new(
                     TransportType::Telegram,
                     msg.strip_command(self.command_prefix),

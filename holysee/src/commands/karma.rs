@@ -1,15 +1,16 @@
 extern crate regex;
 extern crate serde_json;
-extern crate chrono;
 
-use message::{Message, TransportType};
 use chan::Sender;
 use std::collections::HashMap;
 use std::fs::OpenOptions;
-use settings;
-use commands::command_dispatcher::Command;
+use std::error::Error;
 
 use self::regex::{Regex, Captures};
+
+use settings;
+use message::{Message, TransportType};
+use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct KarmaCommand<'a> {
@@ -23,7 +24,13 @@ impl<'a> KarmaCommand<'a> {
     pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> KarmaCommand<'a> {
         KarmaCommand {
             name: String::from("karma"),
-            karma: KarmaCommand::read_database(&settings.data_dir, "karma"),
+            karma: match KarmaCommand::read_database(&settings.data_dir, "karma") {
+                Ok(v) => v,
+                Err(b) => {
+                    error!("Error reading database: {}", b);
+                    HashMap::new()
+                }
+            },
             command_prefix: command_prefix,
             data_dir: &settings.data_dir,
         }
@@ -38,42 +45,29 @@ impl<'a> KarmaCommand<'a> {
         re.is_match(&message.text)
     }
 
-    fn read_database(data_dir: &str, name: &str) -> HashMap<String, i64> {
-        // load the current known karma
-        // TODO: abstract file name and path
-        match OpenOptions::new().read(true).open(format!(
+    fn read_database(data_dir: &str, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
+        let file = OpenOptions::new().read(true).open(format!(
             "{}/{}.json",
             data_dir,
             name
-        )) {
-            Ok(file) => {
-                match serde_json::from_reader(file) {
-                    Err(e) => {
-                        error!("cannot deserialize file: {}", e);
-                        HashMap::new()
-                    }
-                    Ok(k) => k,
-                }
-            }
-            Err(e) => {
-                error!("cannot open file: {}", e);
-                HashMap::new()
-            }
-        }
+        ))?;
+        serde_json::from_reader(file).or_else(|e| {
+            Err(From::from(format!("Cannot deserialize file: {}", e)))
+        })
     }
 
     fn write_database(&self) {
-        match OpenOptions::new().write(true).open(format!(
+        match OpenOptions::new().write(true).truncate(true).open(format!(
             "{}/{}.json",
             self.data_dir,
             &self.name
         )) {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.karma) {
-                    error!("cannot serialize file: {}", e)
+                    error!("Cannot serialize file: {}", e)
                 };
             }
-            Err(e) => error!("cannot open file: {}", e),
+            Err(e) => error!("Cannot open file: {}", e),
         };
     }
 
@@ -102,7 +96,7 @@ impl<'a> KarmaCommand<'a> {
 
 impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
-        debug!("karma execute");
+        info!("Executing KarmaCommand");
         let re_get = Regex::new(
             format!(r"^(?:{})karma\s+(.*)$", self.command_prefix).as_ref(),
         ).unwrap();
@@ -113,15 +107,15 @@ impl<'a> Command for KarmaCommand<'a> {
 
         // COMMAND HANDLING
         for cap in re_get.captures_iter(&msg.text) {
-            debug!("karma get for captures {:#?}", cap);
+            debug!("Karma get captures {:#?}", cap);
             karma_irc = self.get(&cap[1]);
         }
         for cap in re_increase.captures_iter(&msg.text) {
-            debug!("karma increase for captures {:#?}", cap);
+            debug!("Karma increase captures {:#?}", cap);
             karma_irc = self.update(&cap, 1);
         }
         for cap in re_decrease.captures_iter(&msg.text) {
-            debug!("karma decrease for captures {:#?}", cap);
+            debug!("Karma decrease captures {:#?}", cap);
             karma_irc = self.update(&cap, -1);
         }
 

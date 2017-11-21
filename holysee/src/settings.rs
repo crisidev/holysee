@@ -38,7 +38,7 @@ pub struct Settings {
 
 impl Settings {
     pub fn new() -> Result<Self, ConfigError> {
-        debug!("Creating new configuration");
+        debug!("Loading configuration from config/local.toml");
         let mut s = Config::new();
         s.merge(File::with_name("config/local"));
         s.deserialize()

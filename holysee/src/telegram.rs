@@ -4,14 +4,16 @@ pub mod client {
     extern crate tokio_core;
     extern crate chan;
 
-    use self::futures::Stream;
-    use settings::Settings;
-    use message::{Message, TransportType};
     use std::thread;
     use chan::{Sender, Receiver};
+
+    use self::futures::Stream;
     use self::telegram_bot::Api;
     use self::telegram_bot::types::{ChatId, MessageKind, SendMessage, UpdateKind};
     use self::tokio_core::reactor::Core;
+
+    use settings::Settings;
+    use message::{Message, TransportType};
 
     fn main_to_telegram_loop(from_main_queue: &Receiver<Message>, token: &str, chat_id: i64) {
         let mut core = Core::new().unwrap();
@@ -23,6 +25,7 @@ pub mod client {
                 Some(msg) => {
                     core.run(api.send(SendMessage::new(chat, msg.text.as_ref())))
                         .unwrap();
+                    info!("Telegram message sent");
                 }
                 None => {
                     info!("No message to read on internal channel");
@@ -60,7 +63,7 @@ pub mod client {
                                 // user is not present, should never happen
                                 None => String::from("unset"),
                             };
-                            debug!("entities: {:#?} from: {}", entities, from);
+                            debug!("Incoming Telegram message source: #cattedrale, text: {}, src_nick: {}, entities: {:?}", data, from, entities);
                             to_main_queue.send(Message::new(
                                 TransportType::Telegram,
                                 data,
@@ -70,12 +73,12 @@ pub mod client {
                             ));
                         }
                         _ => {
-                            debug!("messageKind != text");
+                            debug!("Telegram message type != text");
                         }
                     }
                 }
                 _ => {
-                    debug!("UpdateKind != messate");
+                    debug!("Telegram update type != message");
                 }
             }
             Ok(())

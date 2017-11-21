@@ -1,8 +1,9 @@
 extern crate regex;
 
-use message::Message;
-use settings;
 use chan::Sender;
+
+use settings;
+use message::Message;
 
 pub trait Command {
     fn execute(&mut self, &Message, &Sender<Message>, &Sender<Message>);
@@ -39,7 +40,6 @@ impl<'a> CommandDispatcher<'a> {
     }
 
     pub fn set_command(&mut self, cmd: Box<Command + 'a>) {
-        debug!("set_command in CommandDispatcher");
         self.command = cmd;
     }
 
@@ -49,7 +49,6 @@ impl<'a> CommandDispatcher<'a> {
         irc_sender: &Sender<Message>,
         tg_sender: &Sender<Message>,
     ) {
-        debug!("execute in CommandDispatcher");
         self.command.execute(msg, irc_sender, tg_sender);
     }
 }

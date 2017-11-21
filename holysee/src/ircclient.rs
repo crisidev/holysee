@@ -2,13 +2,15 @@ pub mod client {
     extern crate irc;
     extern crate chan;
 
-    use std::default::Default;
-    use self::irc::client::prelude::*;
-    use settings::Settings;
-    use message::{Message, TransportType};
     use std::thread;
     use std::process;
+    use std::default::Default;
     use chan::{Sender, Receiver};
+
+    use self::irc::client::prelude::*;
+
+    use settings::Settings;
+    use message::{Message, TransportType};
 
     fn main_to_irc_loop(
         from_main_queue: &Receiver<Message>,
@@ -25,7 +27,7 @@ pub mod client {
                                 info!("IRC NOTICE sent");
                             }
                             Err(_) => {
-                                info!("Could not send, server disconnected");
+                                error!("Could not send, server disconnected");
                             }
                         }
                     } else {
@@ -34,7 +36,7 @@ pub mod client {
                                 info!("IRC PRIVMSG sent");
                             }
                             Err(_) => {
-                                info!("Could not send, server disconnected");
+                                error!("Could not send, server disconnected");
                             }
                         }
                     }
@@ -56,7 +58,7 @@ pub mod client {
                 match m.command {
                     irc::proto::Command::PRIVMSG(source, message_text) => {
                         debug!(
-                            "Incoming message source: {} message_text: {} srcnick: {}",
+                            "Incoming IRC message source: {}, text: {}, src_nick: {}",
                             source,
                             message_text,
                             srcnick
@@ -70,21 +72,21 @@ pub mod client {
                         ));
                     }
                     irc::proto::Command::INVITE(_, channel) => {
-                        debug!("got invite for channel: {}", channel);
+                        debug!("Got invite for channel: {}", channel);
                         if channel == channel_name {
-                            debug!("chosen to join channel {}", channel);
+                            debug!("Chosen to join channel {}", channel);
                             server.send_join(&channel).unwrap();
                         }
                     }
                     irc::proto::Command::NOTICE(_, notice) => {
                         debug!("NOTICE: {}", notice);
                         if notice.contains("You are now identified for") {
-                            debug!("identified successfully");
+                            debug!("Identified successfully");
                             server.send_join(channel_name).unwrap();
                         }
                     }
                     irc::proto::Command::MOTD(_) => {}
-                    _ => debug!("irc message:  {:#?}", m),
+                    _ => debug!("IRC message:  {:#?}", m),
                 };
             })
             .unwrap();
@@ -114,10 +116,10 @@ pub mod client {
         let irc_to_main_server = IrcServer::from_config(cfg).unwrap();
         match irc_to_main_server.identify() {
             Ok(_) => {
-                info!("connection successfull");
+                info!("Connection successfull");
             }
             Err(e) => {
-                error!("{}", e);
+                error!("IRC server error: {}", e);
                 process::exit(1);
             }
         };

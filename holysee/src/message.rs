@@ -37,6 +37,10 @@ impl Message {
     // TODO: handle symbol command for command name
     pub fn strip_command(&self, command_prefix: &str) -> String {
         let re = Regex::new(format!(r"({})\w+\s", command_prefix).as_ref()).unwrap();
-        format!("{}: {}", self.from, re.replace_all(&self.text, ""))
+        if self.is_from_command {
+            format!("{}", re.replace_all(&self.text, ""))
+        } else {
+            format!("{}: {}", self.from, re.replace_all(&self.text, ""))
+        }
     }
 }

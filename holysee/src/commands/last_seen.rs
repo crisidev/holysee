@@ -2,14 +2,16 @@ extern crate regex;
 extern crate serde_json;
 extern crate chrono;
 
-use self::chrono::{Local, NaiveDateTime};
-use message::{Message, TransportType};
-use chan::Sender;
 use std::collections::HashMap;
 use std::fs::OpenOptions;
-use settings;
+use std::error::Error;
+use chan::Sender;
 
 use self::regex::Regex;
+use self::chrono::{Local, NaiveDateTime};
+
+use settings;
+use message::{Message, TransportType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
@@ -27,7 +29,13 @@ impl<'a> LastSeenCommand<'a> {
     ) -> LastSeenCommand<'a> {
         LastSeenCommand {
             name: String::from("last_seen"),
-            last_seen: LastSeenCommand::read_database(&settings.data_dir, "last_seen"),
+            last_seen: match LastSeenCommand::read_database(&settings.data_dir, "last_seen") {
+                Ok(v) => v,
+                Err(b) => {
+                    error!("Error reading database: {}", b);
+                    HashMap::new()
+                }
+            },
             command_prefix,
             data_dir: &settings.data_dir,
         }
@@ -36,41 +44,29 @@ impl<'a> LastSeenCommand<'a> {
         true
     }
 
-    fn read_database(data_dir: &String, name: &str) -> HashMap<String, i64> {
-        // load the current known seen times
-        match OpenOptions::new().read(true).open(format!(
+    fn read_database(data_dir: &String, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
+        let file = OpenOptions::new().read(true).open(format!(
             "{}/{}.json",
             data_dir,
             name
-        )) {
-            Ok(file) => {
-                match serde_json::from_reader(file) {
-                    Err(e) => {
-                        error!("cannot deserialize file: {}", e);
-                        HashMap::new()
-                    }
-                    Ok(k) => k,
-                }
-            }
-            Err(e) => {
-                error!("cannot open file: {}", e);
-                HashMap::new()
-            }
-        }
+        ))?;
+        serde_json::from_reader(file).or_else(|e| {
+            Err(From::from(format!("Cannot deserialize file: {}", e)))
+        })
     }
 
     fn write_database(&self) {
-        match OpenOptions::new().write(true).open(format!(
+        match OpenOptions::new().write(true).truncate(true).open(format!(
             "{}/{}.json",
             self.data_dir,
             &self.name
         )) {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.last_seen) {
-                    error!("cannot serialize file: {}", e)
+                    error!("Cannot serialize file: {}", e)
                 };
             }
-            Err(e) => error!("cannot open file: {}", e),
+            Err(e) => error!("Cannot open file: {}", e),
         };
     }
 
@@ -97,7 +93,7 @@ impl<'a> LastSeenCommand<'a> {
 
 impl<'a> Command for LastSeenCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
-        debug!("last_seen execute");
+        info!("Executing LastSeenCommand");
         let re_get = Regex::new(
             format!(r"^(?:{})seen\s+(.*)$", &self.command_prefix).as_ref(),
         ).unwrap();
@@ -105,7 +101,7 @@ impl<'a> Command for LastSeenCommand<'a> {
         // COMMAND HANDLING
         self.see(&msg.from);
         for cap in re_get.captures_iter(&msg.text) {
-            debug!("last_seen for captures {:#?}", cap);
+            debug!("Last seen captures {:#?}", cap);
             let last_seen_irc = self.get(&cap[1]);
             // SEND MESSAGES
             let last_seen_telegram = last_seen_irc.clone();

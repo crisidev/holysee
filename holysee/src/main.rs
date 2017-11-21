@@ -25,6 +25,7 @@ use commands::last_seen::LastSeenCommand;
 use commands::relay::RelayMessageCommand;
 use commands::karma::KarmaCommand;
 use commands::command_dispatcher::CommandDispatcher;
+use commands::quote::QuoteCommand;
 
 fn main() {
     pretty_env_logger::init().unwrap();
@@ -54,6 +55,7 @@ fn main() {
             from_irc.recv() -> irc_answer => {
                 match irc_answer {
                     Some(msg) => {
+                        debug!("Received one message from IRC chan");
                         current_message = msg;
                     },
                     None => {
@@ -65,6 +67,7 @@ fn main() {
             from_telegram.recv() -> telegram_answer => {
                 match telegram_answer {
                     Some(msg) => {
+                        debug!("Received one message from telegram chan");
                         current_message = msg;
                     },
                     None => {
@@ -75,7 +78,7 @@ fn main() {
             }
         }
 
-        debug!("Current message: {:#?}", current_message);
+        debug!("Current HolySee message: {:#?}", current_message);
 
         let relay_command = RelayMessageCommand::new(
             &settings.irc.allow_receive,
@@ -84,21 +87,33 @@ fn main() {
         );
         let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
         let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
+        let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
 
+        // last_seen command (needs to be called always if enabled)
+        if command_dispatcher.is_command_enabled(&last_seen_command.name) &&
+            last_seen_command.matches_message_text(&current_message)
+        {
+            command_dispatcher.set_command(Box::new(last_seen_command));
+            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
+        }
+
+        // karma command
         if command_dispatcher.is_command_enabled(&karma_command.name) &&
             karma_command.matches_message_text(&current_message)
         {
             command_dispatcher.set_command(Box::new(karma_command));
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
+        // quote command
+        } else if command_dispatcher.is_command_enabled(&quote_command.name) &&
+                   quote_command.matches_message_text(&current_message)
+        {
+            command_dispatcher.set_command(Box::new(quote_command));
+            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
+        // relay command
         } else if command_dispatcher.is_command_enabled(&relay_command.name) &&
                    relay_command.matches_message_text(&current_message)
         {
             command_dispatcher.set_command(Box::new(relay_command));
-            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-        } else if command_dispatcher.is_command_enabled(&last_seen_command.name) &&
-                   last_seen_command.matches_message_text(&current_message)
-        {
-            command_dispatcher.set_command(Box::new(last_seen_command));
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         }
     }
