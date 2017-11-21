@@ -31,7 +31,7 @@ use commands::url_preview::UrlPreviewCommand;
 fn main() {
     pretty_env_logger::init().unwrap();
 
-    let settings = match Settings::new() {
+    let settings = match Settings::new(true) {
         Ok(s) => s,
         Err(e) => {
             error!("Error accessing config file: {}", e);

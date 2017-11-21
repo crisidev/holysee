@@ -37,10 +37,14 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn new() -> Result<Self, ConfigError> {
+    pub fn new(prod: bool) -> Result<Self, ConfigError> {
         debug!("Loading configuration from config/local.toml");
         let mut s = Config::new();
-        s.merge(File::with_name("config/local"));
+        if prod {
+            s.merge(File::with_name("config/local"));
+        } else {
+            s.merge(File::with_name("config/example"));
+        }
         s.deserialize()
     }
 }
