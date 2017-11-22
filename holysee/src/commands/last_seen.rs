@@ -42,28 +42,24 @@ impl<'a> LastSeenCommand<'a> {
     }
 
     fn read_database(data_dir: &String, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
-        let file = OpenOptions::new().read(true).open(format!(
-            "{}/{}.json",
-            data_dir,
-            name
-        ))?;
+        let filename = format!("{}/{}.json",  data_dir, name);
+        let filename_clone = filename.clone();
+        let file = OpenOptions::new().read(true).open(filename)?;
         serde_json::from_reader(file).or_else(|e| {
-            Err(From::from(format!("Cannot deserialize file: {}", e)))
+            Err(From::from(format!("Cannot deserialize file {}: {}", filename_clone, e)))
         })
     }
 
     fn write_database(&self) {
-        match OpenOptions::new().write(true).truncate(true).open(format!(
-            "{}/{}.json",
-            self.data_dir,
-            &self.name
-        )) {
+        let filename = format!("{}/{}.json",  self.data_dir, &self.name);
+        let filename_clone = filename.clone();
+        match OpenOptions::new().write(true).truncate(true).open(filename) {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.last_seen) {
-                    error!("Cannot serialize file: {}", e)
+                    error!("Cannot serialize file {}: {}", filename_clone, e)
                 };
             }
-            Err(e) => error!("Cannot open file: {}", e),
+            Err(e) => error!("Cannot open file {}: {}",filename_clone, e),
         };
     }
 

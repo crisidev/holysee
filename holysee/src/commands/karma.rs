@@ -46,13 +46,11 @@ impl<'a> KarmaCommand<'a> {
     }
 
     fn read_database(data_dir: &str, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
-        let file = OpenOptions::new().read(true).open(format!(
-            "{}/{}.json",
-            data_dir,
-            name
-        ))?;
-        serde_json::from_reader(file).or_else(|e| {
-            Err(From::from(format!("Cannot deserialize file: {}", e)))
+        let filename = format!("{}/{}.json",  data_dir, name);
+        let filename_clone = filename.clone();
+        let file = OpenOptions::new().read(true).open(filename)?;
+        serde_json::from_reader(file).or_else(move|e| {
+            Err(From::from(format!("Cannot deserialize file {}: {}", filename_clone, e)))
         })
     }
 
@@ -121,19 +119,25 @@ impl<'a> Command for KarmaCommand<'a> {
 
         // SEND MESSAGES
         let karma_telegram = karma_irc.clone();
-        to_irc.send(Message::new(
-            TransportType::Telegram,
-            karma_irc,
-            String::from("KarmaCommand"),
-            String::from("karma"),
-            true,
-        ));
-        to_telegram.send(Message::new(
-            TransportType::IRC,
-            karma_telegram,
-            String::from("KarmaCommand"),
-            String::from("karma"),
-            true,
-        ));
+        match msg.from_transport {
+            TransportType::IRC => {
+                to_irc.send(Message::new(
+                    TransportType::Telegram,
+                    karma_irc,
+                    String::from("KarmaCommand"),
+                    String::from("karma"),
+                    true,
+                ));
+            }
+            TransportType::Telegram => {
+                to_telegram.send(Message::new(
+                    TransportType::IRC,
+                    karma_telegram,
+                    String::from("KarmaCommand"),
+                    String::from("karma"),
+                    true,
+                ));
+            }
+        }
     }
 }
