@@ -84,6 +84,9 @@ pub mod client {
             Ok(())
         });
         core.run(future).unwrap();
+        // unknown clean exit of the main telegram loop due to currently non understood reasons
+        // FIXME: handle this exit case
+        error!("Telegram bot message sending loop exit");
     }
 
     pub fn new(settings: &Settings, to_main_queue: Sender<Message>) -> Sender<Message> {
