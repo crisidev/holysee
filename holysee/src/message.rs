@@ -8,12 +8,33 @@ pub enum TransportType {
     Telegram,
 }
 
+#[derive(Debug, Clone)]
+pub enum DestinationType {
+    Channel(String),
+    User(String),
+    Unknown,
+}
+
+impl DestinationType {
+    pub fn klone(other: &DestinationType) -> DestinationType{
+        match other {
+            &DestinationType::Channel(ref s) => {
+                DestinationType::Channel(String::from(s.clone()))
+            },
+            &DestinationType::User(ref u) => {
+                DestinationType::Channel(String::from(u.clone()))
+            },
+            &DestinationType::Unknown => DestinationType::Unknown,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct Message {
     pub from_transport: TransportType,
     pub text: String,
     pub from: String,
-    pub to: String,
+    pub to: DestinationType,
     pub is_from_command: bool,
 }
 
@@ -22,7 +43,7 @@ impl Message {
         from_transport: TransportType,
         text: String,
         from: String,
-        to: String,
+        to: DestinationType,
         is_from_command: bool,
     ) -> Message {
         Message {

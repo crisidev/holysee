@@ -9,11 +9,11 @@ pub mod client {
 
     use self::futures::Stream;
     use self::telegram_bot::Api;
-    use self::telegram_bot::types::{ChatId, MessageKind, SendMessage, UpdateKind};
+    use self::telegram_bot::types::{ChatId, MessageKind, SendMessage, UpdateKind, Chat};
     use self::tokio_core::reactor::Core;
 
     use settings::Settings;
-    use message::{Message, TransportType};
+    use message::{Message, TransportType, DestinationType};
 
     fn main_to_telegram_loop(from_main_queue: &Receiver<Message>, token: &str, chat_id: i64) {
         let mut core = Core::new().unwrap();
@@ -63,14 +63,21 @@ pub mod client {
                                         }
                                     }
                                     // user is not present, should never happen
-                                    None => String::from("unset"),
+                                    None => String::from("user unset"),
                                 };
-                                debug!("Incoming Telegram message source: #cattedrale, text: {}, src_nick: {}, entities: {:?}", data, from, entities);
+                                let to: DestinationType = match m.chat {
+                                    Chat::Private(_) => DestinationType::User(from.clone()),
+                                    Chat::Group(g) => DestinationType::Channel(g.title),
+                                    Chat::Supergroup(s) => DestinationType::Channel(s.title),
+                                    Chat::Channel(c) => DestinationType::Channel(c.title),
+                                    Chat::Unknown(_) => DestinationType::Unknown,
+                                };
+                                debug!("Incoming Telegram message source: #cattedrale, text: {}, src_nick: {}, to: {:?}, entities: {:?}", data, from, to, entities);
                                 to_main_queue.send(Message::new(
                                     TransportType::Telegram,
                                     data,
                                     from,
-                                    String::from("-"),
+                                    to,
                                     false,
                                 ));
                             }

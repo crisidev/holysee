@@ -9,7 +9,7 @@ use self::select::document::Document;
 use self::select::predicate::Name;
 use chan::Sender;
 
-use message::{Message, TransportType};
+use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
@@ -22,7 +22,7 @@ impl UrlPreviewCommand {
         UrlPreviewCommand { name: String::from("url_preview") }
     }
 
-    fn get(url: &String, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
+    fn get(url: &String, destination: DestinationType,  to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         let result = reqwest::get(url);
         match result {
             Ok(mut resp) => {
@@ -33,23 +33,26 @@ impl UrlPreviewCommand {
                 let document = Document::from(buf.as_ref());
                 for node in document.find(Name("title")) {
                     println!("{:#?}", node);
+                    let destination_inner: DestinationType = DestinationType::klone(&destination);
                     node.children().for_each(move |x| {
                         // SEND MESSAGES
                         let title_irc = x.as_text().unwrap();
                         debug!("extracted url: {}", title_irc);
                         let title_telegram = title_irc;
+                        let destination_irc: DestinationType = DestinationType::klone(&destination_inner);
+                        let destination_telegram: DestinationType = DestinationType::klone(&destination_inner);
                         to_irc.send(Message::new(
                             TransportType::Telegram,
                             title_irc.to_owned(),
                             String::from("UrlPreviewCommand"),
-                            String::from("url_preview"),
+                            destination_irc,
                             true,
                         ));
                         to_telegram.send(Message::new(
                             TransportType::IRC,
                             title_telegram.to_owned(),
                             String::from("UrlPreviewCommand"),
-                            String::from("url_preview"),
+                            destination_telegram,
                             true,
                         ));
                     });
@@ -73,9 +76,10 @@ impl Command for UrlPreviewCommand {
             let url = String::from(&cap[1]);
             let to_irc_clone = to_irc.clone();
             let to_telegram_clone = to_telegram.clone();
+            let destination: DestinationType = DestinationType::klone(&msg.to);
             debug!("Previewing url {}", url);
             thread::spawn(move || {
-                UrlPreviewCommand::get(&url, &to_irc_clone, &to_telegram_clone)
+                UrlPreviewCommand::get(&url, destination,  &to_irc_clone, &to_telegram_clone)
             });
         }
     }

@@ -14,7 +14,7 @@ use self::chrono::Local;
 use self::rand::distributions::{IndependentSample, Range};
 
 use settings;
-use message::{Message, TransportType};
+use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -194,20 +194,22 @@ impl<'a> Command for QuoteCommand<'a> {
         }
 
         let quote_telegram = quote_irc.clone();
+        let destination_irc: DestinationType = DestinationType::klone(&msg.to);
+        let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
 
         // SEND MESSAGES
         to_irc.send(Message::new(
             TransportType::Telegram,
             quote_irc,
             String::from("QuoteCommand"),
-            String::from("quote"),
+            destination_irc,
             true,
         ));
         to_telegram.send(Message::new(
             TransportType::IRC,
             quote_telegram,
             String::from("QuoteCommand"),
-            String::from("quote"),
+            destination_telegram,
             true,
         ));
     }

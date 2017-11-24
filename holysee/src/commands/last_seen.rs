@@ -11,7 +11,7 @@ use self::regex::Regex;
 use self::chrono::{Local, NaiveDateTime};
 
 use settings;
-use message::{Message, TransportType};
+use message::{Message, TransportType,DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
@@ -98,20 +98,22 @@ impl<'a> Command for LastSeenCommand<'a> {
         for cap in re_get.captures_iter(&msg.text) {
             debug!("Last seen captures {:#?}", cap);
             let last_seen_irc = self.get(&cap[1]);
-            // SEND MESSAGES
             let last_seen_telegram = last_seen_irc.clone();
+            let destination_irc: DestinationType = DestinationType::klone(&msg.to);
+            let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
+            // SEND MESSAGES
             to_irc.send(Message::new(
                 TransportType::Telegram,
                 last_seen_irc,
                 String::from("LastSeenCommand"),
-                self.name.to_owned(),
+                destination_irc,
                 true,
             ));
             to_telegram.send(Message::new(
                 TransportType::IRC,
                 last_seen_telegram,
                 String::from("LastSeenCommand"),
-                self.name.to_owned(),
+                destination_telegram,
                 true,
             ));
         }
