@@ -46,11 +46,13 @@ impl<'a> KarmaCommand<'a> {
     }
 
     fn read_database(data_dir: &str, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
-        let filename = format!("{}/{}.json",  data_dir, name);
+        let filename = format!("{}/{}.json", data_dir, name);
         let filename_clone = filename.clone();
         let file = OpenOptions::new().read(true).open(filename)?;
-        serde_json::from_reader(file).or_else(move|e| {
-            Err(From::from(format!("Cannot deserialize file {}: {}", filename_clone, e)))
+        serde_json::from_reader(file).or_else(move |e| {
+            Err(From::from(
+                format!("Cannot deserialize file {}: {}", filename_clone, e),
+            ))
         })
     }
 

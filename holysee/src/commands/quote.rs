@@ -66,16 +66,18 @@ impl<'a> QuoteCommand<'a> {
     }
 
     fn read_database(data_dir: &str, name: &str) -> Result<Vec<Quote>, Box<Error>> {
-        let filename = format!("{}/{}.json",  data_dir, &name);
+        let filename = format!("{}/{}.json", data_dir, &name);
         let filename_clone = filename.clone();
         let file = OpenOptions::new().read(true).open(filename)?;
         serde_json::from_reader(file).or_else(|e| {
-            Err(From::from(format!("Cannot deserialize file {}: {}", filename_clone, e)))
+            Err(From::from(
+                format!("Cannot deserialize file {}: {}", filename_clone, e),
+            ))
         })
     }
 
     fn write_database(&self) {
-        let filename = format!("{}/{}.json",  self.data_dir, &self.name);
+        let filename = format!("{}/{}.json", self.data_dir, &self.name);
         let filename_clone = filename.clone();
         match OpenOptions::new().write(true).truncate(true).open(filename) {
             Ok(file) => {
@@ -83,7 +85,7 @@ impl<'a> QuoteCommand<'a> {
                     error!("Cannot serialize file {}: {}", filename_clone, e)
                 };
             }
-            Err(e) => error!("Cannot open file {}: {}",filename_clone, e),
+            Err(e) => error!("Cannot open file {}: {}", filename_clone, e),
         };
     }
 

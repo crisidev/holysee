@@ -49,8 +49,8 @@ pub mod client {
     }
 
     fn irc_to_main_loop(to_main_queue: &Sender<Message>, server: &IrcServer, channel_name: &str) {
-        server
-            .for_each_incoming(|m| {
+        loop {
+            match server.for_each_incoming(|m| {
                 let srcnick = match m.source_nickname() {
                     Some(x) => String::from(x),
                     None => String::from("undefined"),
@@ -88,8 +88,12 @@ pub mod client {
                     irc::proto::Command::MOTD(_) => {}
                     _ => debug!("IRC message:  {:#?}", m),
                 };
-            })
-            .unwrap();
+            }) {
+                Ok(item) => debug!("Item from server.for_each_incoming: {:#?}", item),
+                Err(e) => error!("Server loop exiting for reason: {:#?}", e),
+            };
+            warn!("Restarting message receive loop");
+        }
     }
 
 

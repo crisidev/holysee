@@ -74,7 +74,7 @@ impl Command for UrlPreviewCommand {
             let to_irc_clone = to_irc.clone();
             let to_telegram_clone = to_telegram.clone();
             debug!("Previewing url {}", url);
-            thread::spawn( move || {
+            thread::spawn(move || {
                 UrlPreviewCommand::get(&url, &to_irc_clone, &to_telegram_clone)
             });
         }
