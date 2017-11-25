@@ -17,9 +17,7 @@ pub struct CommandDispatcher<'a> {
 
 impl<'a> CommandDispatcher<'a> {
     pub fn new() -> CommandDispatcher<'a> {
-        CommandDispatcher {
-            commands: vec!(),
-        }
+        CommandDispatcher { commands: vec![] }
     }
 
     pub fn register(&mut self, cmd: &'a mut Command) {

@@ -19,9 +19,7 @@ pub struct UrlPreviewCommand {
 
 impl UrlPreviewCommand {
     pub fn new(enabled: bool) -> UrlPreviewCommand {
-        UrlPreviewCommand {
-            enabled,
-        }
+        UrlPreviewCommand { enabled }
     }
 
     fn get(
@@ -77,7 +75,9 @@ impl UrlPreviewCommand {
 impl Command for UrlPreviewCommand {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         info!("Executing UrlPreviewCommand");
-        let re = regex::Regex::new(r"(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:;%()\[\]{}_\+.*~#?,&//=]*))").unwrap();
+        let re = regex::Regex::new(
+            r"(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:;%()\[\]{}_\+.*~#?,&//=]*))",
+        ).unwrap();
 
         // COMMAND HANDLING
         let message_text = msg.text.to_owned();

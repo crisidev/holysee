@@ -43,7 +43,11 @@ pub struct QuoteCommand<'a> {
 }
 
 impl<'a> QuoteCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands, enabled: bool) -> QuoteCommand<'a> {
+    pub fn new(
+        command_prefix: &'a String,
+        settings: &'a settings::Commands,
+        enabled: bool,
+    ) -> QuoteCommand<'a> {
         QuoteCommand {
             quotes: match QuoteCommand::read_database(&settings.data_dir, "quote") {
                 Ok(v) => v,

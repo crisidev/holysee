@@ -21,7 +21,11 @@ pub struct KarmaCommand<'a> {
 }
 
 impl<'a> KarmaCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands, enabled: bool) -> KarmaCommand<'a> {
+    pub fn new(
+        command_prefix: &'a String,
+        settings: &'a settings::Commands,
+        enabled: bool,
+    ) -> KarmaCommand<'a> {
         KarmaCommand {
             karma: match KarmaCommand::read_database(&settings.data_dir, "karma") {
                 Ok(v) => v,
@@ -161,10 +165,10 @@ to decrement it.",
         let re = Regex::new(
             format!(
                 r"(^{}karma\s+(.*)$|^{}riguardo\s+(.*)|^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$|^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$)",
-                self.command_prefix, self.command_prefix
+                self.command_prefix,
+                self.command_prefix
             ).as_ref(),
         ).unwrap();
         re.is_match(&message.text)
     }
-
 }

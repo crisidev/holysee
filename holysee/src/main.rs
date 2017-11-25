@@ -52,14 +52,15 @@ fn main() {
     info!("Starting Holysee");
 
     let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands, true);
-    let mut last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands, true);
+    let mut last_seen_command =
+        LastSeenCommand::new(&settings.command_prefix, &settings.commands, true);
     let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands, true);
     let mut url_preview_command = UrlPreviewCommand::new(true);
     let mut relay_command = RelayMessageCommand::new(
         &settings.irc.allow_receive,
         &settings.telegram.allow_receive,
         &settings.command_prefix,
-        true
+        true,
     );
     usage_hashmap.insert(
         karma_command.get_name().clone(),
