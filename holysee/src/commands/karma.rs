@@ -99,8 +99,7 @@ impl<'a> Command for KarmaCommand<'a> {
         info!("Executing KarmaCommand");
         let re_get = Regex::new(
             format!(
-                r"^(?:{})karma\s+(.*)$|^(?:{})riguardo\s+(.*)$",
-                self.command_prefix,
+                r"^(?:{})(?:karma|riguardo)\s+(.+)$",
                 self.command_prefix
             ).as_ref(),
         ).unwrap();
