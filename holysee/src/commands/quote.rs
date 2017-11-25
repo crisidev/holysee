@@ -36,16 +36,15 @@ impl Quote {
 
 #[derive(Debug)]
 pub struct QuoteCommand<'a> {
-    pub name: String,
     quotes: Vec<Quote>,
     command_prefix: &'a String,
     data_dir: &'a String,
+    enabled: bool,
 }
 
 impl<'a> QuoteCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> QuoteCommand<'a> {
+    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands, enabled: bool) -> QuoteCommand<'a> {
         QuoteCommand {
-            name: String::from("quote"),
             quotes: match QuoteCommand::read_database(&settings.data_dir, "quote") {
                 Ok(v) => v,
                 Err(b) => {
@@ -55,15 +54,10 @@ impl<'a> QuoteCommand<'a> {
             },
             command_prefix,
             data_dir: &settings.data_dir,
+            enabled,
         }
     }
-    pub fn matches_message_text(&self, message: &Message) -> bool {
-        let re = Regex::new(
-            // the shame cannot be forgotten
-            format!(r"^(?:{})(?:[qQ]uote)(.*)$", self.command_prefix).as_ref(),
-        ).unwrap();
-        re.is_match(&message.text)
-    }
+
 
     fn read_database(data_dir: &str, name: &str) -> Result<Vec<Quote>, Box<Error>> {
         let filename = format!("{}/{}.json", data_dir, &name);
@@ -77,7 +71,7 @@ impl<'a> QuoteCommand<'a> {
     }
 
     fn write_database(&self) {
-        let filename = format!("{}/{}.json", self.data_dir, &self.name);
+        let filename = format!("{}/{}.json", self.data_dir, &self.get_name());
         let filename_clone = filename.clone();
         match OpenOptions::new().write(true).truncate(true).open(filename) {
             Ok(file) => {
@@ -156,7 +150,7 @@ impl<'a> Command for QuoteCommand<'a> {
         info!("Executing QuoteCommand");
 
         let re_get = Regex::new(
-            format!(r"^(?:{})[qQ]uote(?:\s+)?$", self.command_prefix).as_ref(),
+            format!(r"^(?:{})[qQ]uote(?:\s+)$", self.command_prefix).as_ref(),
         ).unwrap();
         let re_get_id = Regex::new(
             format!(r"^(?:{})[qQ]uote(?:\s+)(\d+)$", self.command_prefix).as_ref(),
@@ -226,5 +220,21 @@ to delete a quote use\
 to get a specific quote run\
     !quote <quote_id>",
         );
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("quote")
+    }
+
+    fn matches_message_text(&self, message: &Message) -> bool {
+        let re = Regex::new(
+            // the shame cannot be forgotten
+            format!(r"^(?:{})(?:[qQ]uote)(.*)$", self.command_prefix).as_ref(),
+        ).unwrap();
+        re.is_match(&message.text)
     }
 }

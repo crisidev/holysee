@@ -8,10 +8,10 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct RelayMessageCommand<'a> {
-    pub name: String,
     irc_allow_receive: &'a bool,
     telegram_allow_receive: &'a bool,
     command_prefix: &'a String,
+    enabled: bool,
 }
 
 impl<'a> RelayMessageCommand<'a> {
@@ -19,31 +19,14 @@ impl<'a> RelayMessageCommand<'a> {
         irc_allow_receive: &'a bool,
         telegram_allow_receive: &'a bool,
         command_prefix: &'a String,
+        enabled: bool,
     ) -> RelayMessageCommand<'a> {
         RelayMessageCommand {
-            name: String::from("relay"),
             irc_allow_receive,
             telegram_allow_receive,
             command_prefix,
+            enabled,
         }
-    }
-    pub fn matches_message_text(&self, message: &Message) -> bool {
-        match message.from_transport {
-            TransportType::IRC => {
-                if *self.telegram_allow_receive || message.is_from_command {
-                    return true;
-                }
-            }
-            TransportType::Telegram => {
-                if *self.irc_allow_receive || message.is_from_command {
-                    return true;
-                }
-            }
-        };
-        let re = Regex::new(
-            format!(r"^({})(irc|tg)\s+(.*)$", self.command_prefix).as_ref(),
-        ).unwrap();
-        re.is_match(&message.text)
     }
 }
 
@@ -91,5 +74,32 @@ you will need to use\
     !tg <message>\
 for message to be delivered to the chat. Similarly, use !irc for IRC.",
         );
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("relay")
+    }
+
+    fn matches_message_text(&self, message: &Message) -> bool {
+        match message.from_transport {
+            TransportType::IRC => {
+                if *self.telegram_allow_receive || message.is_from_command {
+                    return true;
+                }
+            }
+            TransportType::Telegram => {
+                if *self.irc_allow_receive || message.is_from_command {
+                    return true;
+                }
+            }
+        };
+        let re = Regex::new(
+            format!(r"^({})(irc|tg)\s+(.*)$", self.command_prefix).as_ref(),
+        ).unwrap();
+        re.is_match(&message.text)
     }
 }

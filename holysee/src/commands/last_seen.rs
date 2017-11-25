@@ -16,19 +16,19 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct LastSeenCommand<'a> {
-    pub name: String,
     last_seen: HashMap<String, i64>,
     command_prefix: &'a String,
     data_dir: &'a String,
+    enabled: bool,
 }
 
 impl<'a> LastSeenCommand<'a> {
     pub fn new(
         command_prefix: &'a String,
         settings: &'a settings::Commands,
+        enabled: bool
     ) -> LastSeenCommand<'a> {
         LastSeenCommand {
-            name: String::from("last_seen"),
             last_seen: match LastSeenCommand::read_database(&settings.data_dir, "last_seen") {
                 Ok(v) => v,
                 Err(b) => {
@@ -38,6 +38,7 @@ impl<'a> LastSeenCommand<'a> {
             },
             command_prefix,
             data_dir: &settings.data_dir,
+            enabled,
         }
     }
 
@@ -53,7 +54,7 @@ impl<'a> LastSeenCommand<'a> {
     }
 
     fn write_database(&self) {
-        let filename = format!("{}/{}.json", self.data_dir, &self.name);
+        let filename = format!("{}/{}.json", self.data_dir, &self.get_name());
         let filename_clone = filename.clone();
         match OpenOptions::new().write(true).truncate(true).open(filename) {
             Ok(file) => {
@@ -127,5 +128,17 @@ This can be accessed via the\
     !seen <nick>\
 command. Note that all timestamps are relative to the server's timezone, usually UTC.",
         );
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("last_seen")
+    }
+
+    fn matches_message_text(&self, _: &Message) -> bool {
+        true
     }
 }

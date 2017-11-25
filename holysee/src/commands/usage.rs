@@ -10,29 +10,22 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct UsageCommand<'a> {
-    pub name: String,
     command_prefix: &'a String,
     commands: &'a HashMap<String, String>,
+    enabled: bool,
 }
 
 impl<'a> UsageCommand<'a> {
     pub fn new(
         command_prefix: &'a String,
         commands: &'a mut HashMap<String, String>,
+        enabled: bool,
     ) -> UsageCommand<'a> {
         UsageCommand {
-            name: String::from("usage"),
             command_prefix,
             commands,
+            enabled,
         }
-    }
-
-    pub fn matches_message_text(&self, message: &Message) -> bool {
-        let re = Regex::new(
-            // the shame cannot be forgotten
-            format!(r"^(?:{})(?:[uU]sage)\s+(.*)$", self.command_prefix).as_ref(),
-        ).unwrap();
-        re.is_match(&message.text)
     }
 }
 
@@ -80,5 +73,21 @@ impl<'a> Command for UsageCommand<'a> {
 
     fn get_usage(&self) -> String {
         return String::from("Run via !usage, it retuns this help");
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("usage")
+    }
+
+    fn matches_message_text(&self, message: &Message) -> bool {
+        let re = Regex::new(
+            // the shame cannot be forgotten
+            format!(r"^(?:{})(?:[uU]sage)\s+(.*)$", self.command_prefix).as_ref(),
+        ).unwrap();
+        re.is_match(&message.text)
     }
 }

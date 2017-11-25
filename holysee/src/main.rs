@@ -22,7 +22,7 @@ use std::process;
 use std::collections::HashMap;
 use settings::Settings;
 use message::Message;
-use commands::command_dispatcher::{Command, NullCommand};
+use commands::command_dispatcher::Command;
 use commands::last_seen::LastSeenCommand;
 use commands::relay::RelayMessageCommand;
 use commands::karma::KarmaCommand;
@@ -51,34 +51,48 @@ fn main() {
 
     info!("Starting Holysee");
 
-    let null_command = NullCommand::new();
-    let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
-    let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
-    let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
-    let url_preview_command = UrlPreviewCommand::new();
-    let relay_command = RelayMessageCommand::new(
+    let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands, true);
+    let mut last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands, true);
+    let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands, true);
+    let mut url_preview_command = UrlPreviewCommand::new(true);
+    let mut relay_command = RelayMessageCommand::new(
         &settings.irc.allow_receive,
         &settings.telegram.allow_receive,
         &settings.command_prefix,
+        true
     );
     usage_hashmap.insert(
-        karma_command.name.clone(),
+        karma_command.get_name().clone(),
         karma_command.get_usage().clone(),
     );
     usage_hashmap.insert(
-        quote_command.name.clone(),
+        quote_command.get_name().clone(),
         quote_command.get_usage().clone(),
     );
     usage_hashmap.insert(
-        last_seen_command.name.clone(),
+        last_seen_command.get_name().clone(),
         last_seen_command.get_usage().clone(),
     );
     usage_hashmap.insert(
-        url_preview_command.name.clone(),
+        url_preview_command.get_name().clone(),
         url_preview_command.get_usage().clone(),
     );
-    let usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap);
-    let mut command_dispatcher = CommandDispatcher::new(&settings.commands, &null_command);
+    let mut usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap, true);
+    //let mut command_dispatcher = CommandDispatcher::new(&settings.commands);
+    let mut command_dispatcher = CommandDispatcher::new();
+
+    // FILTERS
+    command_dispatcher.register(&mut last_seen_command);
+    command_dispatcher.register(&mut url_preview_command);
+    // COMMANDS
+    // karma command
+    command_dispatcher.register(&mut karma_command);
+    // quote command
+    command_dispatcher.register(&mut quote_command);
+    // relay command
+    command_dispatcher.register(&mut relay_command);
+    // usage command
+    command_dispatcher.register(&mut usage_command);
 
     loop {
         let current_message: Message;
@@ -110,43 +124,7 @@ fn main() {
         }
 
         debug!("Current HolySee message: {:#?}", current_message);
-
-        // FILTERS
-        if command_dispatcher.is_command_enabled(&last_seen_command.name) {
-            command_dispatcher.set_command(&last_seen_command);
-            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        }
-        if command_dispatcher.is_command_enabled(&url_preview_command.name) {
-            command_dispatcher.set_command(&url_preview_command);
-            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        }
-
-        // COMMANDS
-        // karma command
-        if command_dispatcher.is_command_enabled(&karma_command.name) &&
-            karma_command.matches_message_text(&current_message)
-        {
-            command_dispatcher.set_command(&karma_command);
-            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        // quote command
-        } else if command_dispatcher.is_command_enabled(&quote_command.name) &&
-                   quote_command.matches_message_text(&current_message)
-        {
-            command_dispatcher.set_command(&quote_command);
-            command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
-        // relay command
-        } else if command_dispatcher.is_command_enabled(&relay_command.name) &&
-                   relay_command.matches_message_text(&current_message)
-        {
-            command_dispatcher.set_command(&relay_command);
-            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-        // usage command
-        } else if command_dispatcher.is_command_enabled(&usage_command.name) &&
-                   usage_command.matches_message_text(&current_message)
-        {
-            command_dispatcher.set_command(&usage_command);
-            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-        }
+        command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
 
     }
 }

@@ -14,12 +14,14 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct UrlPreviewCommand {
-    pub name: String,
+    enabled: bool,
 }
 
 impl UrlPreviewCommand {
-    pub fn new() -> UrlPreviewCommand {
-        UrlPreviewCommand { name: String::from("url_preview") }
+    pub fn new(enabled: bool) -> UrlPreviewCommand {
+        UrlPreviewCommand {
+            enabled,
+        }
     }
 
     fn get(
@@ -95,5 +97,17 @@ impl Command for UrlPreviewCommand {
         return String::from(
             "This command is not a real command, therefore it has no usage",
         );
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("url_preview")
+    }
+
+    fn matches_message_text(&self, _: &Message) -> bool {
+        true
     }
 }
