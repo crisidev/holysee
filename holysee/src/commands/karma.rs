@@ -9,7 +9,7 @@ use std::error::Error;
 use self::regex::{Regex, Captures};
 
 use settings;
-use message::{Message, TransportType};
+use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
@@ -125,13 +125,15 @@ impl<'a> Command for KarmaCommand<'a> {
 
         // SEND MESSAGES
         let karma_telegram = karma_irc.clone();
+        let destination_irc: DestinationType = DestinationType::klone(&msg.to);
+        let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
         match msg.from_transport {
             TransportType::IRC => {
                 to_irc.send(Message::new(
                     TransportType::Telegram,
                     karma_irc,
                     String::from("KarmaCommand"),
-                    String::from("karma"),
+                     destination_irc,
                     true,
                 ));
             }
@@ -140,7 +142,7 @@ impl<'a> Command for KarmaCommand<'a> {
                     TransportType::IRC,
                     karma_telegram,
                     String::from("KarmaCommand"),
-                    String::from("karma"),
+                    destination_telegram,
                     true,
                 ));
             }

@@ -10,7 +10,7 @@ pub mod client {
     use self::irc::client::prelude::*;
 
     use settings::Settings;
-    use message::{Message, TransportType};
+    use message::{Message, TransportType, DestinationType};
 
     fn main_to_irc_loop(
         from_main_queue: &Receiver<Message>,
@@ -67,7 +67,7 @@ pub mod client {
                             TransportType::IRC,
                             message_text,
                             srcnick,
-                            source,
+                            DestinationType::User(source),
                             false,
                         ));
                     }

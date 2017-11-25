@@ -1,6 +1,6 @@
 extern crate regex;
 
-use message::{Message, TransportType};
+use message::{Message, TransportType,DestinationType};
 use chan::Sender;
 
 use self::regex::Regex;
@@ -54,6 +54,8 @@ impl<'a> Command for RelayMessageCommand<'a> {
         irc_sender: &Sender<Message>,
         telegram_sender: &Sender<Message>,
     ) {
+        let destination_irc: DestinationType = DestinationType::klone(&msg.to);
+        let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
         match msg.from_transport {
             TransportType::IRC => {
                 debug!("Sending message to Telegram chan");
@@ -61,7 +63,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
                     TransportType::IRC,
                     msg.strip_command(self.command_prefix),
                     msg.from.clone(),
-                    msg.to.clone(),
+                    destination_telegram,
                     msg.is_from_command,
                 ));
             }
@@ -71,7 +73,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
                     TransportType::Telegram,
                     msg.strip_command(self.command_prefix),
                     msg.from.clone(),
-                    msg.to.clone(),
+                    destination_irc,
                     msg.is_from_command,
                 ));
             }
