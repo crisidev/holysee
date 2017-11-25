@@ -5,7 +5,7 @@ use std::collections::HashMap;
 
 use self::regex::Regex;
 
-use message::{Message, TransportType,DestinationType};
+use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
