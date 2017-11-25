@@ -118,4 +118,12 @@ impl<'a> Command for LastSeenCommand<'a> {
             ));
         }
     }
+
+    fn get_usage(&self) -> String {
+        return String::from("\
+The last_seen command keeps track of the last time a user sent a message to the channel the bot is in\
+This can be accessed via the\
+    !seen <nick>\
+command. Note that all timestamps are relative to the server's timezone, usually UTC.")
+    }
 }

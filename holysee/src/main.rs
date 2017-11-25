@@ -19,18 +19,21 @@ mod message;
 mod commands;
 
 use std::process;
+use std::collections::HashMap;
 use settings::Settings;
 use message::Message;
+use commands::command_dispatcher::{Command, NullCommand};
 use commands::last_seen::LastSeenCommand;
 use commands::relay::RelayMessageCommand;
 use commands::karma::KarmaCommand;
 use commands::command_dispatcher::CommandDispatcher;
 use commands::quote::QuoteCommand;
 use commands::url_preview::UrlPreviewCommand;
+use commands::usage::UsageCommand;
 
 fn main() {
     pretty_env_logger::init().unwrap();
-
+    let mut h: HashMap<String, String> = HashMap::new();
     let settings = match Settings::new(true) {
         Ok(s) => s,
         Err(e) => {
@@ -48,7 +51,18 @@ fn main() {
 
     info!("Starting Holysee");
 
-    let mut command_dispatcher = CommandDispatcher::new(&settings.commands);
+    let null_command = NullCommand::new();
+    let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
+    let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
+    let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
+    let url_preview_command = UrlPreviewCommand::new();
+    let relay_command = RelayMessageCommand::new(&settings.irc.allow_receive,&settings.telegram.allow_receive,&settings.command_prefix);
+    h.insert(karma_command.name.clone(), karma_command.get_usage().clone());
+    h.insert(quote_command.name.clone(), quote_command.get_usage().clone());
+    h.insert(last_seen_command.name.clone(), last_seen_command.get_usage().clone());
+    h.insert(url_preview_command.name.clone(), url_preview_command.get_usage().clone());
+    let usage_command = UsageCommand::new(&settings.command_prefix, &mut h);
+    let mut command_dispatcher = CommandDispatcher::new(&settings.commands, &null_command);
 
     loop {
         let current_message: Message;
@@ -81,23 +95,13 @@ fn main() {
 
         debug!("Current HolySee message: {:#?}", current_message);
 
-        let relay_command = RelayMessageCommand::new(
-            &settings.irc.allow_receive,
-            &settings.telegram.allow_receive,
-            &settings.command_prefix,
-        );
-        let karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
-        let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
-        let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
-        let url_preview_command = UrlPreviewCommand::new();
-
         // FILTERS
         if command_dispatcher.is_command_enabled(&last_seen_command.name) {
-            command_dispatcher.set_command(Box::new(last_seen_command));
+            command_dispatcher.set_command(&last_seen_command);
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
         }
         if command_dispatcher.is_command_enabled(&url_preview_command.name) {
-            command_dispatcher.set_command(Box::new(url_preview_command));
+            command_dispatcher.set_command(&url_preview_command);
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
         }
 
@@ -106,20 +110,27 @@ fn main() {
         if command_dispatcher.is_command_enabled(&karma_command.name) &&
             karma_command.matches_message_text(&current_message)
         {
-            command_dispatcher.set_command(Box::new(karma_command));
+            command_dispatcher.set_command(&karma_command);
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
         // quote command
         } else if command_dispatcher.is_command_enabled(&quote_command.name) &&
                    quote_command.matches_message_text(&current_message)
         {
-            command_dispatcher.set_command(Box::new(quote_command));
+            command_dispatcher.set_command(&quote_command);
             command_dispatcher.execute(&current_message, &to_irc, &to_telegram);
         // relay command
         } else if command_dispatcher.is_command_enabled(&relay_command.name) &&
                    relay_command.matches_message_text(&current_message)
         {
-            command_dispatcher.set_command(Box::new(relay_command));
+            command_dispatcher.set_command(&relay_command);
+            command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
+        // usage command
+        } else if command_dispatcher.is_command_enabled(&usage_command.name) &&
+            usage_command.matches_message_text(&current_message)
+        {
+            command_dispatcher.set_command(&usage_command);
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         }
+
     }
 }

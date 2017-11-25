@@ -4,6 +4,7 @@ pub mod relay;
 pub mod last_seen;
 pub mod quote;
 pub mod url_preview;
+pub mod usage;
 
 #[cfg(test)]
 mod tests {

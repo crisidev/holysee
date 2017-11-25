@@ -83,4 +83,8 @@ impl Command for UrlPreviewCommand {
             });
         }
     }
+
+    fn get_usage(&self) -> String {
+        return String::from("This command is not a real command, therefore it has no usage")
+    }
 }

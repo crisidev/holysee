@@ -147,4 +147,15 @@ impl<'a> Command for KarmaCommand<'a> {
             }
         }
     }
+
+    fn get_usage(&self) -> String {
+        return String::from("\
+The karma command maintains a list of strings with their karma. Use
+    !karma <string> or !riguardo <string>
+to see the current karma,
+    viva <string> or <string>++ or hurrah <string>
+to increment it,
+    abbasso <string> or <string>-- or fuck <string>
+to decrement it.")
+    }
 }

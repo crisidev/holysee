@@ -213,4 +213,16 @@ impl<'a> Command for QuoteCommand<'a> {
             true,
         ));
     }
+
+    fn get_usage(&self) -> String {
+        return String::from("\
+The quote command maintains a list of quotes. To get a random quote run\
+    !quote\
+to add a quote use\
+    !quote add <quote>\
+to delete a quote use\
+    !quote rm <quote_id>\
+to get a specific quote run\
+    !quote <quote_id>")
+    }
 }
