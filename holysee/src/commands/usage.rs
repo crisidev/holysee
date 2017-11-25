@@ -79,6 +79,6 @@ impl<'a> Command for UsageCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from("Run via !usage, it retuns this help")
+        return String::from("Run via !usage, it retuns this help");
     }
 }

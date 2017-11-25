@@ -56,11 +56,27 @@ fn main() {
     let last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
     let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
     let url_preview_command = UrlPreviewCommand::new();
-    let relay_command = RelayMessageCommand::new(&settings.irc.allow_receive,&settings.telegram.allow_receive,&settings.command_prefix);
-    usage_hashmap.insert(karma_command.name.clone(), karma_command.get_usage().clone());
-    usage_hashmap.insert(quote_command.name.clone(), quote_command.get_usage().clone());
-    usage_hashmap.insert(last_seen_command.name.clone(), last_seen_command.get_usage().clone());
-    usage_hashmap.insert(url_preview_command.name.clone(), url_preview_command.get_usage().clone());
+    let relay_command = RelayMessageCommand::new(
+        &settings.irc.allow_receive,
+        &settings.telegram.allow_receive,
+        &settings.command_prefix,
+    );
+    usage_hashmap.insert(
+        karma_command.name.clone(),
+        karma_command.get_usage().clone(),
+    );
+    usage_hashmap.insert(
+        quote_command.name.clone(),
+        quote_command.get_usage().clone(),
+    );
+    usage_hashmap.insert(
+        last_seen_command.name.clone(),
+        last_seen_command.get_usage().clone(),
+    );
+    usage_hashmap.insert(
+        url_preview_command.name.clone(),
+        url_preview_command.get_usage().clone(),
+    );
     let usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap);
     let mut command_dispatcher = CommandDispatcher::new(&settings.commands, &null_command);
 
@@ -126,7 +142,7 @@ fn main() {
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
         // usage command
         } else if command_dispatcher.is_command_enabled(&usage_command.name) &&
-            usage_command.matches_message_text(&current_message)
+                   usage_command.matches_message_text(&current_message)
         {
             command_dispatcher.set_command(&usage_command);
             command_dispatcher.execute(&current_message, &irc_client, &telegram_client);

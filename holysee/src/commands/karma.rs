@@ -98,10 +98,7 @@ impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         info!("Executing KarmaCommand");
         let re_get = Regex::new(
-            format!(
-                r"^(?:{})(?:karma|riguardo)\s+(.+)$",
-                self.command_prefix
-            ).as_ref(),
+            format!(r"^(?:{})(?:karma|riguardo)\s+(.+)$", self.command_prefix).as_ref(),
         ).unwrap();
         let re_increase = Regex::new(r"^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$").unwrap();
         let re_decrease = Regex::new(r"^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$").unwrap();
@@ -132,7 +129,7 @@ impl<'a> Command for KarmaCommand<'a> {
                     TransportType::Telegram,
                     karma_irc,
                     String::from("KarmaCommand"),
-                     destination_irc,
+                    destination_irc,
                     true,
                 ));
             }
@@ -149,13 +146,15 @@ impl<'a> Command for KarmaCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from("\
+        return String::from(
+            "\
 The karma command maintains a list of strings with their karma. Use
     !karma <string> or !riguardo <string>
 to see the current karma,
     viva <string> or <string>++ or hurrah <string>
 to increment it,
     abbasso <string> or <string>-- or fuck <string>
-to decrement it.")
+to decrement it.",
+        );
     }
 }

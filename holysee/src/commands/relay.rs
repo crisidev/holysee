@@ -1,6 +1,6 @@
 extern crate regex;
 
-use message::{Message, TransportType,DestinationType};
+use message::{Message, TransportType, DestinationType};
 use chan::Sender;
 
 use self::regex::Regex;
@@ -81,13 +81,15 @@ impl<'a> Command for RelayMessageCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from("\
+        return String::from(
+            "\
 The relay command allows to bypass the configuration allow_receive for a given transport\
 If the relay is configured with allow_receive set to false then only messages that start with\
     !<ID> ..\
 will be relayed. So for example if you have allow_receive set to false for the telegram tranport\
 you will need to use\
     !tg <message>\
-for message to be delivered to the chat. Similarly, use !irc for IRC.")
+for message to be delivered to the chat. Similarly, use !irc for IRC.",
+        );
     }
 }

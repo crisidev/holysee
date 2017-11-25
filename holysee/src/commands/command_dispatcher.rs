@@ -22,7 +22,7 @@ impl NullCommand {
 impl Command for NullCommand {
     fn execute(&mut self, _: &Message, _: &Sender<Message>, _: &Sender<Message>) {}
     fn get_usage(&self) -> String {
-        return String::from("null usage")
+        return String::from("null usage");
     }
 }
 
@@ -32,7 +32,10 @@ pub struct CommandDispatcher<'a> {
 }
 
 impl<'a> CommandDispatcher<'a> {
-    pub fn new(settings: &'a settings::Commands, base_command: &'a Command) -> CommandDispatcher<'a> {
+    pub fn new(
+        settings: &'a settings::Commands,
+        base_command: &'a Command,
+    ) -> CommandDispatcher<'a> {
         CommandDispatcher {
             command: base_command,
             enabled_commands: &settings.enabled,
