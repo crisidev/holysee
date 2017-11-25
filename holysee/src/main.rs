@@ -78,7 +78,6 @@ fn main() {
         url_preview_command.get_usage().clone(),
     );
     let mut usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap, true);
-    //let mut command_dispatcher = CommandDispatcher::new(&settings.commands);
     let mut command_dispatcher = CommandDispatcher::new();
 
     // FILTERS

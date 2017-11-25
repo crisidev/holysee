@@ -1,8 +1,6 @@
 extern crate regex;
 
 use chan::Sender;
-
-//use settings;
 use message::Message;
 
 pub trait Command {
@@ -12,50 +10,17 @@ pub trait Command {
     fn get_name(&self) -> String;
     fn matches_message_text(&self, message: &Message) -> bool;
 }
-//
-//#[derive(Debug)]
-//pub struct NullCommand;
-//
-//impl NullCommand {
-//    pub fn new() -> NullCommand {
-//        NullCommand
-//    }
-//}
-//
-//impl Command for NullCommand {
-//    fn execute(&mut self, _: &Message, _: &Sender<Message>, _: &Sender<Message>) {}
-//    fn get_usage(&self) -> String {
-//        return String::from("null usage");
-//    }
-//    fn is_enabled(&self) -> bool {
-//        false
-//    }
-//    fn get_name(&self) -> String {
-//        String::from("null_command")
-//    }
-//    fn matches_message_text(&self, _: &Message) -> bool {
-//        false
-//    }
-//}
 
 pub struct CommandDispatcher<'a> {
     commands: Vec<&'a mut Command>,
-//    enabled_commands: &'a Vec<String>,
 }
 
 impl<'a> CommandDispatcher<'a> {
-    pub fn new(
-//        settings: &'a settings::Commands,
-    ) -> CommandDispatcher<'a> {
+    pub fn new() -> CommandDispatcher<'a> {
         CommandDispatcher {
             commands: vec!(),
-//            enabled_commands: &settings.enabled,
         }
     }
-
-//    pub fn is_command_enabled(&self, command: &str) -> bool {
-//        self.enabled_commands.into_iter().any(|x| x == command)
-//    }
 
     pub fn register(&mut self, cmd: &'a mut Command) {
         self.commands.push(cmd);
