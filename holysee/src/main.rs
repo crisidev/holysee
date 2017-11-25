@@ -33,7 +33,7 @@ use commands::usage::UsageCommand;
 
 fn main() {
     pretty_env_logger::init().unwrap();
-    let mut h: HashMap<String, String> = HashMap::new();
+    let mut usage_hashmap: HashMap<String, String> = HashMap::new();
     let settings = match Settings::new(true) {
         Ok(s) => s,
         Err(e) => {
@@ -57,11 +57,11 @@ fn main() {
     let quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
     let url_preview_command = UrlPreviewCommand::new();
     let relay_command = RelayMessageCommand::new(&settings.irc.allow_receive,&settings.telegram.allow_receive,&settings.command_prefix);
-    h.insert(karma_command.name.clone(), karma_command.get_usage().clone());
-    h.insert(quote_command.name.clone(), quote_command.get_usage().clone());
-    h.insert(last_seen_command.name.clone(), last_seen_command.get_usage().clone());
-    h.insert(url_preview_command.name.clone(), url_preview_command.get_usage().clone());
-    let usage_command = UsageCommand::new(&settings.command_prefix, &mut h);
+    usage_hashmap.insert(karma_command.name.clone(), karma_command.get_usage().clone());
+    usage_hashmap.insert(quote_command.name.clone(), quote_command.get_usage().clone());
+    usage_hashmap.insert(last_seen_command.name.clone(), last_seen_command.get_usage().clone());
+    usage_hashmap.insert(url_preview_command.name.clone(), url_preview_command.get_usage().clone());
+    let usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap);
     let mut command_dispatcher = CommandDispatcher::new(&settings.commands, &null_command);
 
     loop {
