@@ -150,7 +150,7 @@ impl<'a> Command for QuoteCommand<'a> {
         info!("Executing QuoteCommand");
 
         let re_get = Regex::new(
-            format!(r"^(?:{})[qQ]uote(?:\s+)$", self.command_prefix).as_ref(),
+            format!(r"^(?:{})[qQ]uote(?:\s+)?$", self.command_prefix).as_ref(),
         ).unwrap();
         let re_get_id = Regex::new(
             format!(r"^(?:{})[qQ]uote(?:\s+)(\d+)$", self.command_prefix).as_ref(),
