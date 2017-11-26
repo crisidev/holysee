@@ -14,16 +14,19 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct KarmaCommand<'a> {
-    pub name: String,
+    enabled: bool,
     karma: HashMap<String, i64>,
     command_prefix: &'a String,
     data_dir: &'a String,
 }
 
 impl<'a> KarmaCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> KarmaCommand<'a> {
+    pub fn new(
+        command_prefix: &'a String,
+        settings: &'a settings::Commands,
+        enabled: bool,
+    ) -> KarmaCommand<'a> {
         KarmaCommand {
-            name: String::from("karma"),
             karma: match KarmaCommand::read_database(&settings.data_dir, "karma") {
                 Ok(v) => v,
                 Err(b) => {
@@ -31,18 +34,10 @@ impl<'a> KarmaCommand<'a> {
                     HashMap::new()
                 }
             },
+            enabled,
             command_prefix: command_prefix,
             data_dir: &settings.data_dir,
         }
-    }
-    pub fn matches_message_text(&self, message: &Message) -> bool {
-        let re = Regex::new(
-            format!(
-                r"(^{}karma\s+(.*)$|^{}riguardo\s+(.*)|^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$|^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$)",
-                self.command_prefix, self.command_prefix
-            ).as_ref(),
-        ).unwrap();
-        re.is_match(&message.text)
     }
 
     fn read_database(data_dir: &str, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
@@ -60,7 +55,7 @@ impl<'a> KarmaCommand<'a> {
         match OpenOptions::new().write(true).truncate(true).open(format!(
             "{}/{}.json",
             self.data_dir,
-            &self.name
+            &self.get_name()
         )) {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.karma) {
@@ -98,10 +93,7 @@ impl<'a> Command for KarmaCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         info!("Executing KarmaCommand");
         let re_get = Regex::new(
-            format!(
-                r"^(?:{})(?:karma|riguardo)\s+(.+)$",
-                self.command_prefix
-            ).as_ref(),
+            format!(r"^(?:{})(?:karma|riguardo)\s+(.+)$", self.command_prefix).as_ref(),
         ).unwrap();
         let re_increase = Regex::new(r"^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$").unwrap();
         let re_decrease = Regex::new(r"^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$").unwrap();
@@ -132,7 +124,7 @@ impl<'a> Command for KarmaCommand<'a> {
                     TransportType::Telegram,
                     karma_irc,
                     String::from("KarmaCommand"),
-                     destination_irc,
+                    destination_irc,
                     true,
                 ));
             }
@@ -146,5 +138,41 @@ impl<'a> Command for KarmaCommand<'a> {
                 ));
             }
         }
+    }
+
+    fn get_usage(&self) -> String {
+        return String::from(
+            "\
+The karma command maintains a list of strings with their karma. Use
+    !karma <string> or !riguardo <string>
+to see the current karma,
+    viva <string> or <string>++ or hurrah <string>
+to increment it,
+    abbasso <string> or <string>-- or fuck <string>
+to decrement it.",
+        );
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("karma")
+    }
+
+    fn matches_message_text(&self, message: &Message) -> bool {
+        let re = Regex::new(
+            format!(
+                r"(^{}karma\s+(.*)$|^{}riguardo\s+(.*)|^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$|^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$)",
+                self.command_prefix,
+                self.command_prefix
+            ).as_ref(),
+        ).unwrap();
+        re.is_match(&message.text)
+    }
+
+    fn stop_processing(&self) -> bool {
+        true
     }
 }

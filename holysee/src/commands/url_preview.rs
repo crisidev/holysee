@@ -14,15 +14,20 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct UrlPreviewCommand {
-    pub name: String,
+    enabled: bool,
 }
 
 impl UrlPreviewCommand {
-    pub fn new() -> UrlPreviewCommand {
-        UrlPreviewCommand { name: String::from("url_preview") }
+    pub fn new(enabled: bool) -> UrlPreviewCommand {
+        UrlPreviewCommand { enabled }
     }
 
-    fn get(url: &String, destination: DestinationType,  to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
+    fn get(
+        url: &String,
+        destination: DestinationType,
+        to_irc: &Sender<Message>,
+        to_telegram: &Sender<Message>,
+    ) {
         let result = reqwest::get(url);
         match result {
             Ok(mut resp) => {
@@ -39,8 +44,10 @@ impl UrlPreviewCommand {
                         let title_irc = x.as_text().unwrap();
                         debug!("extracted url: {}", title_irc);
                         let title_telegram = title_irc;
-                        let destination_irc: DestinationType = DestinationType::klone(&destination_inner);
-                        let destination_telegram: DestinationType = DestinationType::klone(&destination_inner);
+                        let destination_irc: DestinationType =
+                            DestinationType::klone(&destination_inner);
+                        let destination_telegram: DestinationType =
+                            DestinationType::klone(&destination_inner);
                         to_irc.send(Message::new(
                             TransportType::Telegram,
                             title_irc.to_owned(),
@@ -68,7 +75,9 @@ impl UrlPreviewCommand {
 impl Command for UrlPreviewCommand {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         info!("Executing UrlPreviewCommand");
-        let re = regex::Regex::new(r"(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:;%()\[\]{}_\+.*~#?,&//=]*))").unwrap();
+        let re = regex::Regex::new(
+            r"(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b(?:[-a-zA-Z0-9@:;%()\[\]{}_\+.*~#?,&//=]*))",
+        ).unwrap();
 
         // COMMAND HANDLING
         let message_text = msg.text.to_owned();
@@ -79,8 +88,30 @@ impl Command for UrlPreviewCommand {
             let destination: DestinationType = DestinationType::klone(&msg.to);
             debug!("Previewing url {}", url);
             thread::spawn(move || {
-                UrlPreviewCommand::get(&url, destination,  &to_irc_clone, &to_telegram_clone)
+                UrlPreviewCommand::get(&url, destination, &to_irc_clone, &to_telegram_clone)
             });
         }
+    }
+
+    fn get_usage(&self) -> String {
+        return String::from(
+            "This command is not a real command, therefore it has no usage",
+        );
+    }
+
+    fn is_enabled(&self) -> bool {
+        self.enabled
+    }
+
+    fn get_name(&self) -> String {
+        String::from("url_preview")
+    }
+
+    fn matches_message_text(&self, _: &Message) -> bool {
+        true
+    }
+
+    fn stop_processing(&self) -> bool {
+        false
     }
 }

@@ -50,7 +50,7 @@ pub mod client {
                                         match u.username {
                                             // if username is provided, use it
                                             Some(username) => username,
-                                            // if username is not provided, try telegram profile names
+                                            // username is not provided,use telegram profile names
                                             None => {
                                                 // first_name always contains something
                                                 match u.last_name {
@@ -72,7 +72,14 @@ pub mod client {
                                     Chat::Channel(c) => DestinationType::Channel(c.title),
                                     Chat::Unknown(_) => DestinationType::Unknown,
                                 };
-                                debug!("Incoming Telegram message source: #cattedrale, text: {}, src_nick: {}, to: {:?}, entities: {:?}", data, from, to, entities);
+                                debug!(
+                                    "Incoming Telegram message source: #cattedrale, \
+                                text: {}, src_nick: {}, to: {:?}, entities: {:?}",
+                                    data,
+                                    from,
+                                    to,
+                                    entities
+                                );
                                 to_main_queue.send(Message::new(
                                     TransportType::Telegram,
                                     data,

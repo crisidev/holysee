@@ -16,14 +16,10 @@ pub enum DestinationType {
 }
 
 impl DestinationType {
-    pub fn klone(other: &DestinationType) -> DestinationType{
+    pub fn klone(other: &DestinationType) -> DestinationType {
         match other {
-            &DestinationType::Channel(ref s) => {
-                DestinationType::Channel(String::from(s.clone()))
-            },
-            &DestinationType::User(ref u) => {
-                DestinationType::Channel(String::from(u.clone()))
-            },
+            &DestinationType::Channel(ref s) => DestinationType::Channel(String::from(s.clone())),
+            &DestinationType::User(ref u) => DestinationType::Channel(String::from(u.clone())),
             &DestinationType::Unknown => DestinationType::Unknown,
         }
     }
