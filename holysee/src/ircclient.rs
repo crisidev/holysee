@@ -2,8 +2,7 @@ pub mod client {
     extern crate irc;
     extern crate chan;
 
-    use std::thread;
-    use std::process;
+    use std::{thread, time, process};
     use std::default::Default;
     use chan::{Sender, Receiver};
 
@@ -19,26 +18,54 @@ pub mod client {
     ) {
         loop {
             let current: Option<Message> = from_main_queue.recv();
+            let error: String;
             match current {
                 Some(msg) => {
-                    if msg.is_from_command {
-                        match server.send_notice(channel_name, msg.text.as_ref()) {
-                            Ok(_) => {
-                                info!("IRC NOTICE sent");
-                            }
-                            Err(_) => {
-                                error!("Could not send, server disconnected");
-                            }
-                        }
+                    let message_text : &String = &msg.text;
+                    let mut lines: Vec<&str> = message_text.split('\n').collect();
+                    let lines_len = lines.len();
+                    let mut send_delay_ms: u64;
+                    if lines_len > 30 {
+                        error = format!("skipping message with {} lines", lines_len);
+                        error!("{}", error);
+                        // overwrite the lines vector so that we only send the notification
+                        // of the missed message to the destination
+                        lines = vec!(&error);
+                        send_delay_ms = 0;
+                    } else if lines_len > 10 {
+                        send_delay_ms = 250;
                     } else {
-                        match server.send_privmsg(channel_name, msg.text.as_ref()) {
-                            Ok(_) => {
-                                info!("IRC PRIVMSG sent");
+                        send_delay_ms = 100;
+                    }
+                    // skip the delay if we are sending to a single user
+                    match msg.to {
+                        DestinationType::User(u) => {
+                            debug!("irc sending multiline to user {}", u);
+                            send_delay_ms = 0;
+                        },
+                        _ => {},
+                    }
+                    for line in lines {
+                        if msg.is_from_command {
+                            match server.send_notice(channel_name, line) {
+                                Ok(_) => {
+                                    info!("IRC NOTICE sent");
+                                }
+                                Err(_) => {
+                                    error!("Could not send, server disconnected");
+                                }
                             }
-                            Err(_) => {
-                                error!("Could not send, server disconnected");
+                        } else {
+                            match server.send_privmsg(channel_name, line) {
+                                Ok(_) => {
+                                    info!("IRC PRIVMSG sent");
+                                }
+                                Err(_) => {
+                                    error!("Could not send, server disconnected");
+                                }
                             }
                         }
+                        thread::sleep(time::Duration::from_millis(send_delay_ms));
                     }
                 }
                 None => {
