@@ -90,4 +90,8 @@ impl<'a> Command for UsageCommand<'a> {
         ).unwrap();
         re.is_match(&message.text)
     }
+
+    fn stop_processing(&self) -> bool {
+        true
+    }
 }

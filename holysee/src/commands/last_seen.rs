@@ -141,4 +141,8 @@ command. Note that all timestamps are relative to the server's timezone, usually
     fn matches_message_text(&self, _: &Message) -> bool {
         true
     }
+
+    fn stop_processing(&self) -> bool {
+        false
+    }
 }

@@ -110,4 +110,8 @@ impl Command for UrlPreviewCommand {
     fn matches_message_text(&self, _: &Message) -> bool {
         true
     }
+
+    fn stop_processing(&self) -> bool {
+        false
+    }
 }

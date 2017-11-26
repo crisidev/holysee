@@ -89,10 +89,11 @@ fn main() {
     command_dispatcher.register(&mut karma_command);
     // quote command
     command_dispatcher.register(&mut quote_command);
-    // relay command
-    command_dispatcher.register(&mut relay_command);
     // usage command
     command_dispatcher.register(&mut usage_command);
+    // relay command
+    command_dispatcher.register(&mut relay_command);
+
 
     loop {
         let current_message: Message;

@@ -171,4 +171,8 @@ to decrement it.",
         ).unwrap();
         re.is_match(&message.text)
     }
+
+    fn stop_processing(&self) -> bool {
+        true
+    }
 }
