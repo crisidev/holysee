@@ -41,19 +41,17 @@ pub mod client {
                     // skip the delay if we are sending to a single user
                     match msg.to {
                         DestinationType::User(u) => {
-                            debug!("irc sending multiline to user {}", u);
+                            debug!("Sending to user {}", u);
                             destination = u;
                             send_delay_ms = 0;
                         },
-                        DestinationType::Channel(c) => {
-                            destination = c;
-                        },
-                        DestinationType::Unknown => {
-                            error!("Sending to default destination {}", channel_name);
+                        DestinationType::Unknown | DestinationType::Channel(_) => {
+                            debug!("Sending to channel {}", channel_name);
                             destination = String::from(channel_name);
                         }
                     }
                     for line in lines {
+                        debug!("SENDING: {}", destination);
                         if msg.is_from_command {
                             match server.send_notice(&destination, line) {
                                 Ok(_) => {
