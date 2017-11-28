@@ -19,6 +19,7 @@ pub mod client {
         loop {
             let current: Option<Message> = from_main_queue.recv();
             let error: String;
+            let destination: String;
             match current {
                 Some(msg) => {
                     let message_text : &String = &msg.text;
@@ -41,13 +42,20 @@ pub mod client {
                     match msg.to {
                         DestinationType::User(u) => {
                             debug!("irc sending multiline to user {}", u);
+                            destination = u;
                             send_delay_ms = 0;
                         },
-                        _ => {},
+                        DestinationType::Channel(c) => {
+                            destination = c;
+                        },
+                        DestinationType::Unknown => {
+                            error!("Sending to default destination {}", channel_name);
+                            destination = String::from(channel_name);
+                        }
                     }
                     for line in lines {
                         if msg.is_from_command {
-                            match server.send_notice(channel_name, line) {
+                            match server.send_notice(&destination, line) {
                                 Ok(_) => {
                                     info!("IRC NOTICE sent");
                                 }
@@ -56,7 +64,7 @@ pub mod client {
                                 }
                             }
                         } else {
-                            match server.send_privmsg(channel_name, line) {
+                            match server.send_privmsg(&destination, line) {
                                 Ok(_) => {
                                     info!("IRC PRIVMSG sent");
                                 }

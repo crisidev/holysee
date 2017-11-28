@@ -21,6 +21,7 @@ impl<'a> UsageCommand<'a> {
         commands: &'a mut HashMap<String, String>,
         enabled: bool,
     ) -> UsageCommand<'a> {
+        debug!("Created usage command with usages for: {:#?}", commands.keys().collect::<Vec<&String>>());
         UsageCommand {
             command_prefix,
             commands,
@@ -41,18 +42,29 @@ impl<'a> Command for UsageCommand<'a> {
             debug!("Usage captures {:#?}", cap);
             let command_name = &cap[1];
             let mut usage_string = String::new();
-            for (cmd_name, cmd_usage) in self.commands.iter() {
-                if *cmd_name == command_name {
-                    usage_string = String::from(cmd_usage.clone());
-                } else {
-                    usage_string = String::from(format!("Command {} not found", command_name));
+            if command_name == self.get_name() {
+                usage_string = self.get_usage();
+            } else {
+                for (cmd_name, cmd_usage) in self.commands.iter() {
+                    if *cmd_name == command_name {
+                        usage_string = String::from(cmd_usage.clone());
+                        break
+                    } else {
+                        usage_string = String::from(format!("Command {} not found. Available ones: {:#?}", command_name, self.commands.keys().collect::<Vec<&String>>()));
+                    }
                 }
             }
 
             let usage_string_irc = usage_string.clone();
             let usage_string_telegra = usage_string.clone();
-            let destination_irc: DestinationType = DestinationType::klone(&msg.to);
-            let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
+            let destination: DestinationType;
+            if msg.from.contains('#') {
+                destination = DestinationType::Channel(msg.from.clone());
+            } else {
+                destination = DestinationType::User(msg.from.clone());
+            }
+            let destination_irc: DestinationType = DestinationType::klone(&destination);
+            let destination_telegram: DestinationType = DestinationType::klone(&destination);
             // SEND MESSAGES
             to_irc.send(Message::new(
                 TransportType::Telegram,
@@ -72,7 +84,8 @@ impl<'a> Command for UsageCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from("Run via !usage, it retuns this help");
+        return String::from(format!("This command returns the list of available commands and their usage.\
+        Available commands: {:#?}", self.commands.keys().collect::<Vec<&String>>()));
     }
 
     fn is_enabled(&self) -> bool {
