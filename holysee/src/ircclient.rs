@@ -39,20 +39,23 @@ pub mod client {
                         send_delay_ms = 100;
                     }
                     // skip the delay if we are sending to a single user
-                    match msg.to {
+                    let to_user: bool = match msg.to {
                         DestinationType::User(u) => {
                             debug!("Sending to user {}", u);
                             destination = u;
                             send_delay_ms = 0;
+                            true
                         },
                         DestinationType::Unknown | DestinationType::Channel(_) => {
                             debug!("Sending to channel {}", channel_name);
                             destination = String::from(channel_name);
+                            false
                         }
-                    }
+                    };
                     for line in lines {
-                        debug!("SENDING: {}", destination);
-                        if msg.is_from_command {
+                        // if the message comes from any command always send it as notice
+                        // unless the destination is a user, in that case send via privmsg
+                        if msg.is_from_command && !to_user{
                             match server.send_notice(&destination, line) {
                                 Ok(_) => {
                                     info!("IRC NOTICE sent");
@@ -100,7 +103,7 @@ pub mod client {
                             TransportType::IRC,
                             message_text,
                             srcnick,
-                            DestinationType::User(source),
+                            DestinationType::Channel(source),
                             false,
                         ));
                     }

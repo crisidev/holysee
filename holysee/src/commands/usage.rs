@@ -33,54 +33,60 @@ impl<'a> UsageCommand<'a> {
 impl<'a> Command for UsageCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         info!("Executing UsageCommand");
+        let re_self = Regex::new(
+            format!(r"^(?:{})[uU]sage$", &self.command_prefix).as_ref(),
+        ).unwrap();
         let re_get = Regex::new(
-            format!(r"^(?:{})usage\s+(.*)$", &self.command_prefix).as_ref(),
+            format!(r"^(?:{})[uU]sage\s+(.+)$", &self.command_prefix).as_ref(),
         ).unwrap();
 
+        let mut usage_string = String::new();
+
         // COMMAND HANDLING
+        for cap in re_self.captures_iter(&msg.text) {
+            debug!("Usage self captures: {:#?}", cap);
+            usage_string = self.get_usage();
+        }
+
         for cap in re_get.captures_iter(&msg.text) {
-            debug!("Usage captures {:#?}", cap);
+            debug!("Usage argument captures: {:#?}", cap);
             let command_name = &cap[1];
-            let mut usage_string = String::new();
-            if command_name == self.get_name() {
-                usage_string = self.get_usage();
-            } else {
-                for (cmd_name, cmd_usage) in self.commands.iter() {
-                    if *cmd_name == command_name {
-                        usage_string = String::from(cmd_usage.clone());
-                        break
-                    } else {
-                        usage_string = String::from(format!("Command {} not found. Available ones: {:#?}", command_name, self.commands.keys().collect::<Vec<&String>>()));
-                    }
+            for (cmd_name, cmd_usage) in self.commands.iter() {
+                if *cmd_name == command_name {
+                    usage_string = String::from(cmd_usage.clone());
+                    break
+                } else {
+                    usage_string = String::from(format!("Command {} not found. Available ones: {:#?}", command_name, self.commands.keys().collect::<Vec<&String>>()));
                 }
             }
-
-            let usage_string_irc = usage_string.clone();
-            let usage_string_telegra = usage_string.clone();
-            let destination: DestinationType;
-            if msg.from.contains('#') {
-                destination = DestinationType::Channel(msg.from.clone());
-            } else {
-                destination = DestinationType::User(msg.from.clone());
-            }
-            let destination_irc: DestinationType = DestinationType::klone(&destination);
-            let destination_telegram: DestinationType = DestinationType::klone(&destination);
-            // SEND MESSAGES
-            to_irc.send(Message::new(
-                TransportType::Telegram,
-                usage_string_irc,
-                String::from("UsageCommand"),
-                destination_irc,
-                true,
-            ));
-            to_telegram.send(Message::new(
-                TransportType::IRC,
-                usage_string_telegra,
-                String::from("UsageCommand"),
-                destination_telegram,
-                true,
-            ));
         }
+
+        let usage_string_irc = usage_string.clone();
+        let usage_string_telegra = usage_string.clone();
+        let destination: DestinationType;
+        if msg.from.contains("#") {
+            destination = DestinationType::Channel(msg.from.clone());
+        } else {
+            destination = DestinationType::User(msg.from.clone());
+        }
+
+        let destination_irc: DestinationType = DestinationType::klone(&destination);
+        let destination_telegram: DestinationType = DestinationType::klone(&destination);
+        // SEND MESSAGES
+        to_irc.send(Message::new(
+            TransportType::Telegram,
+            usage_string_irc,
+            String::from("UsageCommand"),
+            destination_irc,
+            true,
+        ));
+        to_telegram.send(Message::new(
+            TransportType::IRC,
+            usage_string_telegra,
+            String::from("UsageCommand"),
+            destination_telegram,
+            true,
+        ));
     }
 
     fn get_usage(&self) -> String {
@@ -99,7 +105,7 @@ impl<'a> Command for UsageCommand<'a> {
     fn matches_message_text(&self, message: &Message) -> bool {
         let re = Regex::new(
             // the shame cannot be forgotten
-            format!(r"^(?:{})(?:[uU]sage)\s+(.*)$", self.command_prefix).as_ref(),
+            format!(r"^(?:{})(?:[uU]sage)\s*(.*)$", self.command_prefix).as_ref(),
         ).unwrap();
         re.is_match(&message.text)
     }

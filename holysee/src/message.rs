@@ -19,7 +19,7 @@ impl DestinationType {
     pub fn klone(other: &DestinationType) -> DestinationType {
         match other {
             &DestinationType::Channel(ref s) => DestinationType::Channel(String::from(s.clone())),
-            &DestinationType::User(ref u) => DestinationType::Channel(String::from(u.clone())),
+            &DestinationType::User(ref u) => DestinationType::User(String::from(u.clone())),
             &DestinationType::Unknown => DestinationType::Unknown,
         }
     }
