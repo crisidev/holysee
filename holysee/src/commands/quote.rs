@@ -196,20 +196,26 @@ impl<'a> Command for QuoteCommand<'a> {
         let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
 
         // SEND MESSAGES
-        to_irc.send(Message::new(
-            TransportType::Telegram,
-            quote_irc,
-            String::from("QuoteCommand"),
-            destination_irc,
-            true,
-        ));
-        to_telegram.send(Message::new(
-            TransportType::IRC,
-            quote_telegram,
-            String::from("QuoteCommand"),
-            destination_telegram,
-            true,
-        ));
+        match msg.from_transport {
+            TransportType::IRC => {
+                to_irc.send(Message::new(
+                    TransportType::Telegram,
+                    quote_irc,
+                    String::from("QuoteCommand"),
+                    destination_irc,
+                    true,
+                ));
+            }
+            TransportType::Telegram => {
+                to_telegram.send(Message::new(
+                    TransportType::IRC,
+                    quote_telegram,
+                    String::from("QuoteCommand"),
+                    destination_telegram,
+                    true,
+                ));
+            }
+        }
     }
 
     fn get_usage(&self) -> String {

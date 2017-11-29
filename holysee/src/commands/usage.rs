@@ -73,20 +73,26 @@ impl<'a> Command for UsageCommand<'a> {
         let destination_irc: DestinationType = DestinationType::klone(&destination);
         let destination_telegram: DestinationType = DestinationType::klone(&destination);
         // SEND MESSAGES
-        to_irc.send(Message::new(
-            TransportType::Telegram,
-            usage_string_irc,
-            String::from("UsageCommand"),
-            destination_irc,
-            true,
-        ));
-        to_telegram.send(Message::new(
-            TransportType::IRC,
-            usage_string_telegra,
-            String::from("UsageCommand"),
-            destination_telegram,
-            true,
-        ));
+        match msg.from_transport {
+            TransportType::IRC => {
+                to_irc.send(Message::new(
+                    TransportType::Telegram,
+                    usage_string_irc,
+                    String::from("UsageCommand"),
+                    destination_irc,
+                    true,
+                ));
+            },
+            TransportType::Telegram => {
+                to_telegram.send(Message::new(
+                    TransportType::IRC,
+                    usage_string_telegra,
+                    String::from("UsageCommand"),
+                    destination_telegram,
+                    true,
+                ));
+            }
+        }
     }
 
     fn get_usage(&self) -> String {

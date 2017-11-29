@@ -103,20 +103,26 @@ impl<'a> Command for LastSeenCommand<'a> {
             let destination_irc: DestinationType = DestinationType::klone(&msg.to);
             let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
             // SEND MESSAGES
-            to_irc.send(Message::new(
-                TransportType::Telegram,
-                last_seen_irc,
-                String::from("LastSeenCommand"),
-                destination_irc,
-                true,
-            ));
-            to_telegram.send(Message::new(
-                TransportType::IRC,
-                last_seen_telegram,
-                String::from("LastSeenCommand"),
-                destination_telegram,
-                true,
-            ));
+            match msg.from_transport {
+                TransportType::IRC => {
+                    to_irc.send(Message::new(
+                        TransportType::Telegram,
+                        last_seen_irc,
+                        String::from("LastSeenCommand"),
+                        destination_irc,
+                        true,
+                    ));
+                }
+                TransportType::Telegram => {
+                    to_telegram.send(Message::new(
+                        TransportType::IRC,
+                        last_seen_telegram,
+                        String::from("LastSeenCommand"),
+                        destination_telegram,
+                        true,
+                    ));
+                }
+            }
         }
     }
 
