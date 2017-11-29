@@ -34,10 +34,10 @@ impl<'a> Command for UsageCommand<'a> {
     fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
         info!("Executing UsageCommand");
         let re_self = Regex::new(
-            format!(r"^(?:{})[uU]sage$", &self.command_prefix).as_ref(),
+            format!(r"^(?:{})(?:[uU]sage|[hH]elp)$", &self.command_prefix).as_ref(),
         ).unwrap();
         let re_get = Regex::new(
-            format!(r"^(?:{})[uU]sage\s+(.+)$", &self.command_prefix).as_ref(),
+            format!(r"^(?:{})(?:[uU]sage|[hH]elp)\s+(.+)$", &self.command_prefix).as_ref(),
         ).unwrap();
 
         let mut usage_string = String::new();
@@ -111,7 +111,7 @@ impl<'a> Command for UsageCommand<'a> {
     fn matches_message_text(&self, message: &Message) -> bool {
         let re = Regex::new(
             // the shame cannot be forgotten
-            format!(r"^(?:{})(?:[uU]sage)\s*(.*)$", self.command_prefix).as_ref(),
+            format!(r"^(?:{})(?:[uU]sage|[hH]elp)\s*(.*)$", self.command_prefix).as_ref(),
         ).unwrap();
         re.is_match(&message.text)
     }
