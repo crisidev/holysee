@@ -13,7 +13,7 @@ ExecStartPre=/usr/bin/docker pull $DOCKER_IMAGE
 ExecStart=/usr/bin/docker run --rm --name $DOCKER_NAME \
   -e DNSDOCK_IMAGE=${DNSDOCK_NAME} \
   -v /var/lib/lbdock/${DOCKER_NAME}:/usr/src/holysee/holysee/data \
-  -v /etc/lbdock/conf/${DOCKER_NAME}:/usr/src/holysee/holysee/conf \
+  -v /etc/lbdock/conf/${DOCKER_NAME}:/usr/src/holysee/holysee/config \
   $DOCKER_IMAGE bash -c "RUST_LOG=holysee=info holysee"
 ExecStop=/usr/bin/docker stop $DOCKER_NAME
 
