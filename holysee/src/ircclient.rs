@@ -22,7 +22,7 @@ pub mod client {
             let destination: String;
             match current {
                 Some(msg) => {
-                    let message_text : &String = &msg.text;
+                    let message_text: &String = &msg.text;
                     let mut lines: Vec<&str> = message_text.split('\n').collect();
                     let lines_len = lines.len();
                     let mut send_delay_ms: u64;
@@ -31,7 +31,7 @@ pub mod client {
                         error!("{}", error);
                         // overwrite the lines vector so that we only send the notification
                         // of the missed message to the destination
-                        lines = vec!(&error);
+                        lines = vec![&error];
                         send_delay_ms = 0;
                     } else if lines_len > 10 {
                         send_delay_ms = 250;
@@ -45,8 +45,9 @@ pub mod client {
                             destination = u;
                             send_delay_ms = 0;
                             true
-                        },
-                        DestinationType::Unknown | DestinationType::Channel(_) => {
+                        }
+                        DestinationType::Unknown |
+                        DestinationType::Channel(_) => {
                             debug!("Sending to channel {}", channel_name);
                             destination = String::from(channel_name);
                             false
@@ -55,7 +56,7 @@ pub mod client {
                     for line in lines {
                         // if the message comes from any command always send it as notice
                         // unless the destination is a user, in that case send via privmsg
-                        if msg.is_from_command && !to_user{
+                        if msg.is_from_command && !to_user {
                             match server.send_notice(&destination, line) {
                                 Ok(_) => {
                                     info!("IRC NOTICE sent");

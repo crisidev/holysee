@@ -14,6 +14,26 @@ This abomination uses the excellent [telegram-bot](https://github.com/telegram-r
 a copy of it - to avoid depending on the latest git - in the `vendor/` directory. Many thanks to the original
 authors for their excellent job.
 
+# Configuration
+
+The provided configuration file is pretty self explanatory, just copy it to `config/local.toml` for it to be loaded
+by the bot during startup.
+
+To convert irc nicknames to telegram and viceversa you can configure the `[[nicknames]]` map in the toml file as follows:
+
+```
+[[nickanmes]]
+irc = "user1"
+telegram = "@someother"
+[[nicknames]]
+irc = "user2"
+telegram = "@user2"
+```
+
+In this example remember to add the `@` character before the username of the telegram user, or the translation will fail.
+
+There is currently no way of disabling this feature, feel free to find a way of configuring without breaking :)
+
 # Usage
 
 Build the bot and run it from where it can access the data dir configured in the toml file.

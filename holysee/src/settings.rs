@@ -28,12 +28,19 @@ pub struct Commands {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct NickEntry {
+    pub telegram: String,
+    pub irc: String,
+}
+
+#[derive(Debug, Deserialize)]
 pub struct Settings {
     pub debug: bool,
     pub command_prefix: String,
     pub irc: Irc,
     pub telegram: Telegram,
     pub commands: Commands,
+    pub nicknames: Vec<NickEntry>,
 }
 
 impl Settings {

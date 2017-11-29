@@ -1,6 +1,13 @@
 debug = true
 command_prefix = "!"
 
+[[nicknames]]
+irc = "user1"
+telegram = "@user1"
+[[nicknames]]
+irc = "different_name"
+telegram = "@completely_different_user"
+
 [irc]
 nickname = "user"
 username = "username"

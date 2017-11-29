@@ -1,6 +1,7 @@
 extern crate regex;
 
 use self::regex::Regex;
+use settings::NickEntry;
 
 #[derive(Debug)]
 pub enum TransportType {
@@ -58,6 +59,34 @@ impl Message {
             format!("{}", re.replace_all(&self.text, ""))
         } else {
             format!("{}: {}", self.from, re.replace_all(&self.text, ""))
+        }
+    }
+
+    // TODO: refactor this interface to not depend on settings::NickEntry
+    pub fn convert_nicknames(&mut self, nicknames: &Vec<NickEntry>) {
+        for nick_map in nicknames {
+            match self.from_transport {
+                TransportType::IRC => {
+                    if self.text.contains(&nick_map.irc) {
+                        debug!(
+                            "Converting current irc from {} to telegram {}",
+                            self.from,
+                            nick_map.telegram
+                        );
+                        self.text = self.text.replace(&nick_map.irc, &nick_map.telegram);
+                    }
+                }
+                TransportType::Telegram => {
+                    if self.text.contains(&nick_map.telegram) {
+                        debug!(
+                            "Converting current telegram from {} to irc {}",
+                            self.from,
+                            nick_map.irc
+                        );
+                        self.text = self.text.replace(&nick_map.telegram, &nick_map.irc);
+                    }
+                }
+            }
         }
     }
 }

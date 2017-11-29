@@ -21,7 +21,10 @@ impl<'a> UsageCommand<'a> {
         commands: &'a mut HashMap<String, String>,
         enabled: bool,
     ) -> UsageCommand<'a> {
-        debug!("Created usage command with usages for: {:#?}", commands.keys().collect::<Vec<&String>>());
+        debug!(
+            "Created usage command with usages for: {:#?}",
+            commands.keys().collect::<Vec<&String>>()
+        );
         UsageCommand {
             command_prefix,
             commands,
@@ -54,9 +57,13 @@ impl<'a> Command for UsageCommand<'a> {
             for (cmd_name, cmd_usage) in self.commands.iter() {
                 if *cmd_name == command_name {
                     usage_string = String::from(cmd_usage.clone());
-                    break
+                    break;
                 } else {
-                    usage_string = String::from(format!("Command {} not found. Available ones: {:#?}", command_name, self.commands.keys().collect::<Vec<&String>>()));
+                    usage_string = String::from(format!(
+                        "Command {} not found. Available ones: {:#?}",
+                        command_name,
+                        self.commands.keys().collect::<Vec<&String>>()
+                    ));
                 }
             }
         }
@@ -82,7 +89,7 @@ impl<'a> Command for UsageCommand<'a> {
                     destination_irc,
                     true,
                 ));
-            },
+            }
             TransportType::Telegram => {
                 to_telegram.send(Message::new(
                     TransportType::IRC,
@@ -96,8 +103,11 @@ impl<'a> Command for UsageCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from(format!("This command returns the list of available commands and their usage.\
-        Available commands: {:#?}", self.commands.keys().collect::<Vec<&String>>()));
+        return String::from(format!(
+            "This command returns the list of available commands and their usage.\
+        Available commands: {:#?}",
+            self.commands.keys().collect::<Vec<&String>>()
+        ));
     }
 
     fn is_enabled(&self) -> bool {

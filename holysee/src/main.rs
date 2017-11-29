@@ -96,7 +96,7 @@ fn main() {
 
 
     loop {
-        let current_message: Message;
+        let mut current_message: Message;
         chan_select! {
             from_irc.recv() -> irc_answer => {
                 match irc_answer {
@@ -124,8 +124,10 @@ fn main() {
             }
         }
 
+        current_message.convert_nicknames(&settings.nicknames);
+
+
         debug!("Current HolySee message: {:#?}", current_message);
         command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
-
     }
 }
