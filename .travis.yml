@@ -11,7 +11,7 @@ rust:
 notifications:
   irc:
     channels:
-      - "chat.freenode.net##holysee"
+      - "chat.freenode.net##tapiri"
     on_success: always
     on_failure: always
     use_notice: true
