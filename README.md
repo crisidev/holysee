@@ -1,6 +1,7 @@
 # holysee
 
 [![Build Status](https://travis-ci.org/crisidev/holysee.svg?branch=master)](https://travis-ci.org/crisidev/holysee)
+[![codecov](https://codecov.io/gh/crisidev/holysee/branch/master/graph/badge.svg)](https://codecov.io/gh/crisidev/holysee)
 
 Thought out badly, understood worse and written the worst, this should be a telegram<->irc
 relay bot with a reasonable configuration
