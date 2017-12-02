@@ -90,8 +90,12 @@ impl<'a> KarmaCommand<'a> {
 }
 
 impl<'a> Command for KarmaCommand<'a> {
-    fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
-        info!("Executing KarmaCommand");
+    fn execute(
+        &mut self,
+        msg: &mut Message,
+        to_irc: &Sender<Message>,
+        to_telegram: &Sender<Message>,
+    ) {
         let re_get = Regex::new(
             format!(r"^(?:{})(?:karma|riguardo)\s+(.+)$", self.command_prefix).as_ref(),
         ).unwrap();
@@ -116,8 +120,13 @@ impl<'a> Command for KarmaCommand<'a> {
 
         // SEND MESSAGES
         let karma_telegram = karma_irc.clone();
-        let destination_irc: DestinationType = DestinationType::klone(&msg.to);
-        let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
+        let destination = match msg.to {
+            DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
+            DestinationType::User(_) => DestinationType::User(msg.from.clone()),
+            DestinationType::Unknown => panic!("Serious bug in karma command handler"),
+        };
+        let destination_irc: DestinationType = DestinationType::klone(&destination);
+        let destination_telegram: DestinationType = DestinationType::klone(&destination);
         match msg.from_transport {
             TransportType::IRC => {
                 to_irc.send(Message::new(
@@ -141,7 +150,7 @@ impl<'a> Command for KarmaCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from(
+        String::from(
             "\
 The karma command maintains a list of strings with their karma. Use
     !karma <string> or !riguardo <string>
@@ -150,7 +159,7 @@ to see the current karma,
 to increment it,
     abbasso <string> or <string>-- or fuck <string>
 to decrement it.",
-        );
+        )
     }
 
     fn is_enabled(&self) -> bool {

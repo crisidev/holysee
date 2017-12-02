@@ -88,8 +88,12 @@ impl<'a> LastSeenCommand<'a> {
 }
 
 impl<'a> Command for LastSeenCommand<'a> {
-    fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
-        info!("Executing LastSeenCommand");
+    fn execute(
+        &mut self,
+        msg: &mut Message,
+        to_irc: &Sender<Message>,
+        to_telegram: &Sender<Message>,
+    ) {
         let re_get = Regex::new(
             format!(r"^(?:{})seen\s+(.*)$", &self.command_prefix).as_ref(),
         ).unwrap();
@@ -100,8 +104,13 @@ impl<'a> Command for LastSeenCommand<'a> {
             debug!("Last seen captures {:#?}", cap);
             let last_seen_irc = self.get(&cap[1]);
             let last_seen_telegram = last_seen_irc.clone();
-            let destination_irc: DestinationType = DestinationType::klone(&msg.to);
-            let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
+            let destination = match msg.to {
+                DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
+                DestinationType::User(_) => DestinationType::User(msg.from.clone()),
+                DestinationType::Unknown => panic!("Serious bug in last_seen command handler"),
+            };
+            let destination_irc: DestinationType = DestinationType::klone(&destination);
+            let destination_telegram: DestinationType = DestinationType::klone(&destination);
             // SEND MESSAGES
             match msg.from_transport {
                 TransportType::IRC => {
@@ -127,13 +136,13 @@ impl<'a> Command for LastSeenCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from(
+        String::from(
             "\
 The last_seen command keeps track of the last time a user sent a message to the channel.\
 This can be accessed via the\
     !seen <nick>\
 command. Note that all timestamps are relative to the server's timezone, usually UTC.",
-        );
+        )
     }
 
     fn is_enabled(&self) -> bool {

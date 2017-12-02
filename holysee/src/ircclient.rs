@@ -100,11 +100,16 @@ pub mod client {
                             message_text,
                             srcnick
                         );
+                        let destination = if source.contains('#') {
+                            DestinationType::Channel(source)
+                        } else {
+                            DestinationType::User(source)
+                        };
                         to_main_queue.send(Message::new(
                             TransportType::IRC,
                             message_text,
                             srcnick,
-                            DestinationType::Channel(source),
+                            destination,
                             false,
                         ));
                     }

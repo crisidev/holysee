@@ -1,6 +1,7 @@
 extern crate regex;
 
 use message::{Message, TransportType, DestinationType};
+use settings::NickEntry;
 use chan::Sender;
 
 use self::regex::Regex;
@@ -12,6 +13,7 @@ pub struct RelayMessageCommand<'a> {
     telegram_allow_receive: &'a bool,
     command_prefix: &'a String,
     enabled: bool,
+    nicknames: &'a [NickEntry],
 }
 
 impl<'a> RelayMessageCommand<'a> {
@@ -20,12 +22,14 @@ impl<'a> RelayMessageCommand<'a> {
         telegram_allow_receive: &'a bool,
         command_prefix: &'a String,
         enabled: bool,
+        nicknames: &'a [NickEntry],
     ) -> RelayMessageCommand<'a> {
         RelayMessageCommand {
             irc_allow_receive,
             telegram_allow_receive,
             command_prefix,
             enabled,
+            nicknames,
         }
     }
 }
@@ -33,12 +37,13 @@ impl<'a> RelayMessageCommand<'a> {
 impl<'a> Command for RelayMessageCommand<'a> {
     fn execute(
         &mut self,
-        msg: &Message,
+        msg: &mut Message,
         irc_sender: &Sender<Message>,
         telegram_sender: &Sender<Message>,
     ) {
         let destination_irc: DestinationType = DestinationType::klone(&msg.to);
         let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
+        msg.convert_nicknames(self.nicknames);
         match msg.from_transport {
             TransportType::IRC => {
                 debug!("Sending message to Telegram chan");
@@ -64,7 +69,7 @@ impl<'a> Command for RelayMessageCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from(
+        String::from(
             "\
 The relay command allows to bypass the configuration allow_receive for a given transport\
 If the relay is configured with allow_receive set to false then only messages that start with\
@@ -73,7 +78,7 @@ will be relayed. So for example if you have allow_receive set to false for the t
 you will need to use\
     !tg <message>\
 for message to be delivered to the chat. Similarly, use !irc for IRC.",
-        );
+        )
     }
 
     fn is_enabled(&self) -> bool {

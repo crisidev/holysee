@@ -150,9 +150,12 @@ impl<'a> QuoteCommand<'a> {
 }
 
 impl<'a> Command for QuoteCommand<'a> {
-    fn execute(&mut self, msg: &Message, to_irc: &Sender<Message>, to_telegram: &Sender<Message>) {
-        info!("Executing QuoteCommand");
-
+    fn execute(
+        &mut self,
+        msg: &mut Message,
+        to_irc: &Sender<Message>,
+        to_telegram: &Sender<Message>,
+    ) {
         let re_get = Regex::new(
             format!(r"^(?:{})[qQ]uote(?:\s+)?$", self.command_prefix).as_ref(),
         ).unwrap();
@@ -192,8 +195,13 @@ impl<'a> Command for QuoteCommand<'a> {
         }
 
         let quote_telegram = quote_irc.clone();
-        let destination_irc: DestinationType = DestinationType::klone(&msg.to);
-        let destination_telegram: DestinationType = DestinationType::klone(&msg.to);
+        let destination = match msg.to {
+            DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
+            DestinationType::User(_) => DestinationType::User(msg.from.clone()),
+            DestinationType::Unknown => panic!("Serious bug in quote command handler"),
+        };
+        let destination_irc: DestinationType = DestinationType::klone(&destination);
+        let destination_telegram: DestinationType = DestinationType::klone(&destination);
 
         // SEND MESSAGES
         match msg.from_transport {
@@ -219,7 +227,7 @@ impl<'a> Command for QuoteCommand<'a> {
     }
 
     fn get_usage(&self) -> String {
-        return String::from(
+        String::from(
             "\
 The quote command maintains a list of quotes. To get a random quote run\
     !quote\
@@ -229,7 +237,7 @@ to delete a quote use\
     !quote rm <quote_id>\
 to get a specific quote run\
     !quote <quote_id>",
-        );
+        )
     }
 
     fn is_enabled(&self) -> bool {

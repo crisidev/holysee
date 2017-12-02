@@ -4,7 +4,7 @@ use chan::Sender;
 use message::Message;
 
 pub trait Command {
-    fn execute(&mut self, &Message, &Sender<Message>, &Sender<Message>);
+    fn execute(&mut self, &mut Message, &Sender<Message>, &Sender<Message>);
     fn get_usage(&self) -> String;
     fn is_enabled(&self) -> bool;
     fn get_name(&self) -> String;
@@ -27,16 +27,16 @@ impl<'a> CommandDispatcher<'a> {
 
     pub fn execute(
         &mut self,
-        msg: &Message,
+        msg: &mut Message,
         irc_sender: &Sender<Message>,
         tg_sender: &Sender<Message>,
     ) {
         for command in self.commands.as_mut_slice() {
             if command.matches_message_text(msg) {
-                debug!("execute() for {}", command.get_name());
+                info!("Executing command {}", command.get_name());
                 command.execute(msg, irc_sender, tg_sender);
                 if command.stop_processing() {
-                    debug!("command {} stop processing", command.get_name());
+                    debug!("Command {} stop processing", command.get_name());
                     break;
                 }
             }

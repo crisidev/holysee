@@ -61,6 +61,7 @@ fn main() {
         &settings.telegram.allow_receive,
         &settings.command_prefix,
         true,
+        &settings.nicknames,
     );
     usage_hashmap.insert(
         karma_command.get_name().clone(),
@@ -124,10 +125,7 @@ fn main() {
             }
         }
 
-        current_message.convert_nicknames(&settings.nicknames);
-
-
         debug!("Current HolySee message: {:#?}", current_message);
-        command_dispatcher.execute(&current_message, &irc_client, &telegram_client);
+        command_dispatcher.execute(&mut current_message, &irc_client, &telegram_client);
     }
 }
