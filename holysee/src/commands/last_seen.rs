@@ -16,15 +16,12 @@ use commands::command_dispatcher::Command;
 #[derive(Debug)]
 pub struct LastSeenCommand<'a> {
     last_seen: HashMap<String, i64>,
-    command_prefix: &'a String,
-    data_dir: &'a String,
+    command_prefix: &'a str,
+    data_dir: &'a str,
 }
 
 impl<'a> LastSeenCommand<'a> {
-    pub fn new(
-        command_prefix: &'a String,
-        data_dir: &'a String,
-    ) -> LastSeenCommand<'a> {
+    pub fn new(command_prefix: &'a str, data_dir: &'a str) -> LastSeenCommand<'a> {
         LastSeenCommand {
             last_seen: match LastSeenCommand::read_database(data_dir, "last_seen") {
                 Ok(v) => v,

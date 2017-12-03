@@ -19,6 +19,7 @@ chan = "0.1"
 chrono = "0.4"
 reqwest = "0.8"
 select = "0.4"
+tempdir = "0.3"
 
 telegram-bot = { version = "0.5", path = "../vendor/telegram-bot-edge/lib" }
 clippy = {version = "*", optional = true}

@@ -36,12 +36,12 @@ impl Quote {
 #[derive(Debug)]
 pub struct QuoteCommand<'a> {
     quotes: Vec<Quote>,
-    command_prefix: &'a String,
-    data_dir: &'a String,
+    command_prefix: &'a str,
+    data_dir: &'a str,
 }
 
 impl<'a> QuoteCommand<'a> {
-    pub fn new(command_prefix: &'a String, data_dir: &'a String) -> QuoteCommand<'a> {
+    pub fn new(command_prefix: &'a str, data_dir: &'a str) -> QuoteCommand<'a> {
         QuoteCommand {
             quotes: match QuoteCommand::read_database(data_dir, "quote") {
                 Ok(v) => v,
@@ -95,7 +95,7 @@ impl<'a> QuoteCommand<'a> {
             return format!("no quote with id {} found", index);
         }
         format!(
-            "quote #{} \"{}\" - {}",
+            "quote #{} \"{} - {}\"",
             index,
             self.quotes[index].quote,
             self.quotes[index].author
@@ -120,7 +120,12 @@ impl<'a> QuoteCommand<'a> {
             Local::now().timestamp(),
         ));
         self.write_database();
-        format!("quote #{} \"{}\" added", self.index(quote), quote)
+        format!(
+            "quote #{} \"{} - {}\" added",
+            self.index(quote),
+            quote,
+            author
+        )
     }
 
     fn rm(&mut self, quote: &str) -> String {
@@ -138,17 +143,10 @@ impl<'a> QuoteCommand<'a> {
         let quote = self.get_id(index);
         self.quotes.remove(index);
         self.write_database();
-        format!("quote #{} \"{}\" removed", index, quote)
+        format!("{} removed", quote)
     }
-}
 
-impl<'a> Command for QuoteCommand<'a> {
-    fn execute(
-        &mut self,
-        msg: &mut Message,
-        to_irc: &Sender<Message>,
-        to_telegram: &Sender<Message>,
-    ) {
+    fn handle(&mut self, text: &str, from: &str) -> String {
         let re_get = Regex::new(
             format!(r"^(?:{})[qQ]uote(?:\s+)?$", self.command_prefix).as_ref(),
         ).unwrap();
@@ -164,30 +162,42 @@ impl<'a> Command for QuoteCommand<'a> {
         let re_rm = Regex::new(
             format!(r"^(?:{})[qQ]uote(?:\s+)rm(?:\s+)(.*)$", self.command_prefix).as_ref(),
         ).unwrap();
-        let mut quote_irc = format!("command \"{}\" not recognized", msg.text);
+        let mut result = format!("command \"{}\" not recognized", text);
 
         // COMMAND HANDLING
-        for cap in re_get.captures_iter(&msg.text) {
+        for cap in re_get.captures_iter(text) {
             debug!("Quote get captures {:#?}", cap);
-            quote_irc = self.get();
+            result = self.get();
         }
-        for cap in re_get_id.captures_iter(&msg.text) {
+        for cap in re_get_id.captures_iter(text) {
             debug!("Quote get id captures {:#?}", cap);
-            quote_irc = self.get_id(usize::from_str(&cap[1]).unwrap());
+            result = self.get_id(usize::from_str(&cap[1]).unwrap());
         }
-        for cap in re_add.captures_iter(&msg.text) {
+        for cap in re_add.captures_iter(text) {
             debug!("Quote add captures {:#?}", cap);
-            quote_irc = self.add(&cap[1], &msg.from);
+            result = self.add(&cap[1], from);
         }
-        for cap in re_rm.captures_iter(&msg.text) {
+        for cap in re_rm.captures_iter(text) {
             debug!("Quote rm captures {:#?}", cap);
-            quote_irc = match cap[1].parse::<usize>() {
+            result = match cap[1].parse::<usize>() {
                 Ok(n) => self.rm_id(n),
                 Err(_) => self.rm(&cap[1]),
             }
         }
+        result
+    }
+}
 
+impl<'a> Command for QuoteCommand<'a> {
+    fn execute(
+        &mut self,
+        msg: &mut Message,
+        to_irc: &Sender<Message>,
+        to_telegram: &Sender<Message>,
+    ) {
+        let quote_irc = self.handle(&msg.text, &msg.from);
         let quote_telegram = quote_irc.clone();
+
         let destination = match msg.to {
             DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
             DestinationType::User(_) => DestinationType::User(msg.from.clone()),
@@ -252,6 +262,10 @@ to get a specific quote run\
 
 #[cfg(test)]
 mod tests {
+    extern crate tempdir;
+
+    use self::tempdir::TempDir;
+
     use super::{Command, QuoteCommand, Message, TransportType, DestinationType};
 
     #[test]
@@ -259,7 +273,7 @@ mod tests {
         let prefix = String::from("!");
         let data_dir = String::from("adir");
         let quote = QuoteCommand::new(&prefix, &data_dir);
-        let mut msg = Message{
+        let mut msg = Message {
             from_transport: TransportType::IRC,
             text: String::from("!quote"),
             from: String::from("auser"),
@@ -289,7 +303,7 @@ mod tests {
         let prefix = String::from("!");
         let data_dir = String::from("adir");
         let quote = QuoteCommand::new(&prefix, &data_dir);
-        let mut msg = Message{
+        let mut msg = Message {
             from_transport: TransportType::IRC,
             text: String::from("quote"),
             from: String::from("auser"),
@@ -317,5 +331,22 @@ mod tests {
         assert!(quote.matches_message_text(&msg));
         msg.text = String::from("astring");
         assert!(quote.matches_message_text(&msg));
+    }
+
+    #[test]
+    fn test_handle() {
+        let prefix = String::from("!");
+        let data_dir = TempDir::new("holysee_quote").unwrap();
+        let mut quote = QuoteCommand::new(&prefix, data_dir.path().to_str().unwrap());
+        assert!(quote.handle("!quote", "auser") == "No quotes in the database");
+        assert!(quote.handle("!quote add aquote", "auser") == "quote #0 \"aquote - auser\" added");
+        assert!(quote.handle("!quote", "auser") == "quote #0 \"aquote - auser\"");
+        assert!(quote.handle("!quote 0", "auser") == "quote #0 \"aquote - auser\"");
+        assert!(quote.handle("!quote 1", "auser") == "no quote with id 1 found");
+        assert!(quote.handle("!quote rm aquote", "auser") == "quote #0 \"aquote - auser\" removed");
+        assert!(quote.handle("!quote rm aquote", "auser") == "quote \"aquote\" does not exist");
+        assert!(quote.handle("quote", "auser") == "command \"quote\" not recognized");
+        assert!(quote.handle("Quote", "auser") == "command \"Quote\" not recognized");
+        assert!(quote.handle("astring", "auser") == "command \"astring\" not recognized");
     }
 }

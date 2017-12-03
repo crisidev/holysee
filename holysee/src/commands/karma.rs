@@ -14,12 +14,12 @@ use commands::command_dispatcher::Command;
 #[derive(Debug)]
 pub struct KarmaCommand<'a> {
     karma: HashMap<String, i64>,
-    command_prefix: &'a String,
-    data_dir: &'a String,
+    command_prefix: &'a str,
+    data_dir: &'a str,
 }
 
 impl<'a> KarmaCommand<'a> {
-    pub fn new(command_prefix: &'a String, data_dir: &'a String) -> KarmaCommand<'a> {
+    pub fn new(command_prefix: &'a str, data_dir: &'a str) -> KarmaCommand<'a> {
         KarmaCommand {
             karma: match KarmaCommand::read_database(data_dir, "karma") {
                 Ok(v) => v,

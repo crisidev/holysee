@@ -10,13 +10,13 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct UsageCommand<'a> {
-    command_prefix: &'a String,
+    command_prefix: &'a str,
     commands: &'a HashMap<String, String>,
 }
 
 impl<'a> UsageCommand<'a> {
     pub fn new(
-        command_prefix: &'a String,
+        command_prefix: &'a str,
         commands: &'a mut HashMap<String, String>,
     ) -> UsageCommand<'a> {
         debug!(

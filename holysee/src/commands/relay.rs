@@ -11,7 +11,7 @@ use commands::command_dispatcher::Command;
 pub struct RelayMessageCommand<'a> {
     irc_allow_receive: &'a bool,
     telegram_allow_receive: &'a bool,
-    command_prefix: &'a String,
+    command_prefix: &'a str,
     nicknames: &'a [NickEntry],
 }
 
@@ -19,7 +19,7 @@ impl<'a> RelayMessageCommand<'a> {
     pub fn new(
         irc_allow_receive: &'a bool,
         telegram_allow_receive: &'a bool,
-        command_prefix: &'a String,
+        command_prefix: &'a str,
         nicknames: &'a [NickEntry],
     ) -> RelayMessageCommand<'a> {
         RelayMessageCommand {
