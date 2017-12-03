@@ -13,19 +13,17 @@ use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
-pub struct UrlPreviewCommand {
-    enabled: bool,
-}
+pub struct UrlPreviewCommand {}
 
 impl UrlPreviewCommand {
-    pub fn new(enabled: bool) -> UrlPreviewCommand {
-        UrlPreviewCommand { enabled }
+    pub fn new() -> UrlPreviewCommand {
+        UrlPreviewCommand {}
     }
 
     fn get(
-        url: &String,
+        url: &str,
         destination: &DestinationType,
-        from: &String,
+        from: &str,
         to_irc: &Sender<Message>,
         to_telegram: &Sender<Message>,
     ) {
@@ -42,7 +40,7 @@ impl UrlPreviewCommand {
                     println!("{:#?}", node);
                     let destination_inner = match *destination {
                         DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
-                        DestinationType::User(_) => DestinationType::User(from.clone()),
+                        DestinationType::User(_) => DestinationType::User(from.to_string()),
                         DestinationType::Unknown => {
                             panic!("Serious bug in url_preview command handler")
                         }
@@ -110,10 +108,6 @@ impl Command for UrlPreviewCommand {
         String::from(
             "This command is not a real command, therefore it has no usage",
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {

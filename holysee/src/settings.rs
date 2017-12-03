@@ -54,4 +54,8 @@ impl Settings {
         }
         s.deserialize()
     }
+
+    pub fn enable_relay_command(settings: &mut Settings) {
+        settings.commands.enabled.push(String::from("relay"));
+    }
 }

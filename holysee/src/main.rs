@@ -34,13 +34,16 @@ use commands::usage::UsageCommand;
 fn main() {
     pretty_env_logger::init().unwrap();
     let mut usage_hashmap: HashMap<String, String> = HashMap::new();
-    let settings = match Settings::new(true) {
+    let mut settings = match Settings::new(true) {
         Ok(s) => s,
         Err(e) => {
             error!("Error accessing config file: {}", e);
             process::exit(1)
         }
     };
+
+    // relay command is always enabled
+    Settings::enable_relay_command(&mut settings);
 
     // TODO: fix this hardcoded value
     let (to_irc, from_irc) = chan::sync(100);
@@ -51,16 +54,14 @@ fn main() {
 
     info!("Starting Holysee");
 
-    let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands, true);
-    let mut last_seen_command =
-        LastSeenCommand::new(&settings.command_prefix, &settings.commands, true);
-    let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands, true);
-    let mut url_preview_command = UrlPreviewCommand::new(true);
+    let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
+    let mut last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
+    let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
+    let mut url_preview_command = UrlPreviewCommand::new();
     let mut relay_command = RelayMessageCommand::new(
         &settings.irc.allow_receive,
         &settings.telegram.allow_receive,
         &settings.command_prefix,
-        true,
         &settings.nicknames,
     );
     usage_hashmap.insert(
@@ -79,8 +80,8 @@ fn main() {
         url_preview_command.get_name().clone(),
         url_preview_command.get_usage().clone(),
     );
-    let mut usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap, true);
-    let mut command_dispatcher = CommandDispatcher::new();
+    let mut usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap);
+    let mut command_dispatcher = CommandDispatcher::new(&settings.commands.enabled);
 
     // FILTERS
     command_dispatcher.register(&mut last_seen_command);

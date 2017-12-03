@@ -39,15 +39,10 @@ pub struct QuoteCommand<'a> {
     quotes: Vec<Quote>,
     command_prefix: &'a String,
     data_dir: &'a String,
-    enabled: bool,
 }
 
 impl<'a> QuoteCommand<'a> {
-    pub fn new(
-        command_prefix: &'a String,
-        settings: &'a settings::Commands,
-        enabled: bool,
-    ) -> QuoteCommand<'a> {
+    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> QuoteCommand<'a> {
         QuoteCommand {
             quotes: match QuoteCommand::read_database(&settings.data_dir, "quote") {
                 Ok(v) => v,
@@ -58,7 +53,6 @@ impl<'a> QuoteCommand<'a> {
             },
             command_prefix,
             data_dir: &settings.data_dir,
-            enabled,
         }
     }
 
@@ -238,10 +232,6 @@ to delete a quote use\
 to get a specific quote run\
     !quote <quote_id>",
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {

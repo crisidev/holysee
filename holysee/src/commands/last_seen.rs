@@ -19,14 +19,12 @@ pub struct LastSeenCommand<'a> {
     last_seen: HashMap<String, i64>,
     command_prefix: &'a String,
     data_dir: &'a String,
-    enabled: bool,
 }
 
 impl<'a> LastSeenCommand<'a> {
     pub fn new(
         command_prefix: &'a String,
         settings: &'a settings::Commands,
-        enabled: bool,
     ) -> LastSeenCommand<'a> {
         LastSeenCommand {
             last_seen: match LastSeenCommand::read_database(&settings.data_dir, "last_seen") {
@@ -38,11 +36,10 @@ impl<'a> LastSeenCommand<'a> {
             },
             command_prefix,
             data_dir: &settings.data_dir,
-            enabled,
         }
     }
 
-    fn read_database(data_dir: &String, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
+    fn read_database(data_dir: &str, name: &str) -> Result<HashMap<String, i64>, Box<Error>> {
         let filename = format!("{}/{}.json", data_dir, name);
         let filename_clone = filename.clone();
         let file = OpenOptions::new().read(true).open(filename)?;
@@ -143,10 +140,6 @@ This can be accessed via the\
     !seen <nick>\
 command. Note that all timestamps are relative to the server's timezone, usually UTC.",
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {
