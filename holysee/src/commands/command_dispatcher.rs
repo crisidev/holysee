@@ -13,12 +13,15 @@ pub trait Command {
 
 pub struct CommandDispatcher<'a> {
     commands: Vec<&'a mut Command>,
-    enabled_commands: &'a[String],
+    enabled_commands: &'a [String],
 }
 
 impl<'a> CommandDispatcher<'a> {
-    pub fn new(enabled_commands: &'a[String]) -> CommandDispatcher<'a> {
-        CommandDispatcher { commands: vec![], enabled_commands}
+    pub fn new(enabled_commands: &'a [String]) -> CommandDispatcher<'a> {
+        CommandDispatcher {
+            commands: vec![],
+            enabled_commands,
+        }
     }
 
     pub fn is_command_enabled(&self, command: &str) -> bool {
