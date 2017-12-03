@@ -28,5 +28,8 @@ allow_receive = true
 [commands]
 data_dir = "./data"
 enabled = [
-    "relay"
+    "karma",
+    "quote",
+    "last_seen",
+    "url_preview",
 ]

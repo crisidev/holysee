@@ -43,7 +43,7 @@ fn main() {
     };
 
     // relay command is always enabled
-    Settings::enable_relay_command(&mut settings);
+    Settings::enable_default_commands(&mut settings);
 
     // TODO: fix this hardcoded value
     let (to_irc, from_irc) = chan::sync(100);
