@@ -4,7 +4,7 @@
 [![codecov](https://codecov.io/gh/crisidev/holysee/branch/master/graph/badge.svg)](https://codecov.io/gh/crisidev/holysee)
 
 Thought out badly, understood worse and written the worst, this should be a telegram<->irc
-relay bot with a reasonable configuration
+relay bot with a reasonable configuration.
 
 **DISCLAIMER**: anything that can ever come from this package is pure garbage. Only a madman
 would ever learn or study this package. You have been warned.
@@ -35,18 +35,50 @@ In this example remember to add the `@` character before the username of the tel
 
 There is currently no way of disabling this feature, feel free to find a way of configuring without breaking :)
 
+Enabled commands can be configured as well:
+
+```
+[commands]
+data_dir = "./data"
+enabled = [
+  "karma",
+  "quote",
+  "last_seen",
+  "url_preview",
+]
+```
+
 # Usage
 
 Build the bot and run it from where it can access the data dir configured in the toml file.
 
 ## Available Commands and Filters
+* karma
+* last_seen
+* quote
+* url_preview
 
 The commands are run via any transport, using a configurable prefix, like:
-
 
 ```
 !command param1 param2 ...
 ```
+
+### Help / Usage
+
+Every command is provided with a self-explaining help which will be sent, where possible, as private message to the requester.
+**It is always enabled.**
+
+```
+!help command
+!usage command
+```
+
+Note: `!usage` and `!help` are aliased.
+
+### Relay
+
+Relay is a special command allowing IRC <-> Telegram relay. **It is always enabled and triggered on every message.**
 
 ### Karma
 
@@ -82,6 +114,7 @@ to add a quote use
 to delete a quote use
 
 - `!quote rm <quote_id>`
+- `!quote rm <string>`
 
 to get a specific quote you can run
 
