@@ -3,6 +3,20 @@
 [![Build Status](https://travis-ci.org/crisidev/holysee.svg?branch=master)](https://travis-ci.org/crisidev/holysee)
 [![codecov](https://codecov.io/gh/crisidev/holysee/branch/master/graph/badge.svg)](https://codecov.io/gh/crisidev/holysee)
 
+- [Holysee](#holysee)
+  * [Dependencies](#dependencies)
+- [Configuration](#configuration)
+- [Usage](#usage)
+  * [Stable-ish version](#stable-ish-version)
+  * [Git version](#git-version)
+  * [Available Commands and Filters](#available-commands-and-filters)
+    + [Help / Usage](#help---usage)
+    + [Relay](#relay)
+    + [Karma](#karma)
+    + [Last Seen](#last-seen)
+    + [Quote](#quote)
+    + [Url Preview](#url-preview)
+
 Thought out badly, understood worse and written the worst, this should be a telegram<->irc
 relay bot with a reasonable configuration.
 
