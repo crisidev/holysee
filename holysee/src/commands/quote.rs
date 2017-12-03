@@ -67,22 +67,27 @@ impl<'a> QuoteCommand<'a> {
         })
     }
 
-    fn write_database(&self) {
+    fn write_database(&self) -> bool {
         let filename = format!("{}/{}.json", self.data_dir, &self.get_name());
         let filename_clone = filename.clone();
         match OpenOptions::new().write(true).truncate(true).open(filename) {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.quotes) {
-                    error!("Cannot serialize file {}: {}", filename_clone, e)
+                    error!("Cannot serialize file {}: {}", filename_clone, e);
+                    return false
                 };
             }
-            Err(e) => error!("Cannot open file {}: {}", filename_clone, e),
+            Err(e) => {
+                error!("Cannot open file {}: {}", filename_clone, e);
+                return false
+            }
         };
+        true
     }
 
     fn get(&self) -> String {
         if self.quotes.is_empty() {
-            return String::from("No quotes in the database");
+            return String::from("no quotes in the database");
         }
         let mut rng = rand::thread_rng();
         let range = Range::new(0, self.quotes.len());
@@ -92,7 +97,7 @@ impl<'a> QuoteCommand<'a> {
 
     fn get_id(&self, index: usize) -> String {
         if index >= self.quotes.len() as usize {
-            return format!("no quote with id {} found", index);
+            return format!("quote #{} does not exist", index);
         }
         format!(
             "quote #{} \"{} - {}\"",
@@ -112,7 +117,7 @@ impl<'a> QuoteCommand<'a> {
     fn add(&mut self, quote: &str, author: &str) -> String {
         let index = self.index(quote);
         if index != -1 {
-            return format!("quote #{} \"{}\" already added", index, quote);
+            return format!("quote #{} \"{} - {}\" already added", index, quote, author);
         }
         self.quotes.push(Quote::new(
             author,
@@ -137,7 +142,7 @@ impl<'a> QuoteCommand<'a> {
     }
 
     fn rm_id(&mut self, index: usize) -> String {
-        if index > self.quotes.len() {
+        if index >= self.quotes.len() {
             return format!("quote #{} does not exist", index);
         }
         let quote = self.get_id(index);
@@ -269,7 +274,24 @@ mod tests {
     use super::{Command, QuoteCommand, Message, TransportType, DestinationType};
 
     #[test]
-    fn test_matches_message_text_ok() {
+    fn test_read_database() {
+        assert!(QuoteCommand::read_database("adir", "quote.json").is_err());
+        let data_dir = TempDir::new("holysee_quote").unwrap();
+        assert!(QuoteCommand::read_database(data_dir.path().to_str().unwrap(), "quote.json").is_err());
+    }
+
+    #[test]
+    fn test_write_database() {
+        // TODO: handle also successful case which now returns
+        // Cannot open file /var/folders/xj/8kykppps3b9d79m8g40nbyz9p52bt_/T/holysee_quote.C6rvI2j6eqIa/quote.json: No such file or directory (os error 2)
+        // Cannot open file /var/folders/xj/8kykppps3b9d79m8g40nbyz9p52bt_/T/holysee_quote.C6rvI2j6eqIa/quote.json: No such file or directory (os error 2)
+        let prefix = String::from("!");
+        let quote = QuoteCommand::new(&prefix, "adir");
+        assert!(!quote.write_database());
+    }
+
+    #[test]
+    fn test_matches_message_text() {
         let prefix = String::from("!");
         let data_dir = String::from("adir");
         let quote = QuoteCommand::new(&prefix, &data_dir);
@@ -280,6 +302,9 @@ mod tests {
             to: DestinationType::User(String::from("auser")),
             is_from_command: false,
         };
+
+        // successes
+        msg.text = String::from("!quote");
         assert!(quote.matches_message_text(&msg));
         msg.text = String::from("!quote add aquote");
         assert!(quote.matches_message_text(&msg));
@@ -295,42 +320,30 @@ mod tests {
         assert!(quote.matches_message_text(&msg));
         msg.text = String::from("!Quote 3");
         assert!(quote.matches_message_text(&msg));
-    }
 
-    #[test]
-    #[should_panic]
-    fn test_matches_message_text_ko() {
-        let prefix = String::from("!");
-        let data_dir = String::from("adir");
-        let quote = QuoteCommand::new(&prefix, &data_dir);
-        let mut msg = Message {
-            from_transport: TransportType::IRC,
-            text: String::from("quote"),
-            from: String::from("auser"),
-            to: DestinationType::User(String::from("auser")),
-            is_from_command: false,
-        };
-        assert!(quote.matches_message_text(&msg));
+        // failures
+        msg.text = String::from("quote");
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("quote add aquote");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("quote rm aquote");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("quote 3");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("quote ");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("Quote");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("Quote add aquote");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("Quote rm aquote");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("Quote 3");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("Quote ");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
         msg.text = String::from("astring");
-        assert!(quote.matches_message_text(&msg));
+        assert!(!quote.matches_message_text(&msg));
     }
 
     #[test]
@@ -338,13 +351,15 @@ mod tests {
         let prefix = String::from("!");
         let data_dir = TempDir::new("holysee_quote").unwrap();
         let mut quote = QuoteCommand::new(&prefix, data_dir.path().to_str().unwrap());
-        assert!(quote.handle("!quote", "auser") == "No quotes in the database");
+        assert!(quote.handle("!quote", "auser") == "no quotes in the database");
         assert!(quote.handle("!quote add aquote", "auser") == "quote #0 \"aquote - auser\" added");
+        assert!(quote.handle("!quote add aquote", "auser") == "quote #0 \"aquote - auser\" already added");
         assert!(quote.handle("!quote", "auser") == "quote #0 \"aquote - auser\"");
         assert!(quote.handle("!quote 0", "auser") == "quote #0 \"aquote - auser\"");
-        assert!(quote.handle("!quote 1", "auser") == "no quote with id 1 found");
+        assert!(quote.handle("!quote 1", "auser") == "quote #1 does not exist");
         assert!(quote.handle("!quote rm aquote", "auser") == "quote #0 \"aquote - auser\" removed");
         assert!(quote.handle("!quote rm aquote", "auser") == "quote \"aquote\" does not exist");
+        assert!(quote.handle("!quote rm 0", "auser") == "quote #0 does not exist");
         assert!(quote.handle("quote", "auser") == "command \"quote\" not recognized");
         assert!(quote.handle("Quote", "auser") == "command \"Quote\" not recognized");
         assert!(quote.handle("astring", "auser") == "command \"astring\" not recognized");
