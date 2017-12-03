@@ -8,7 +8,6 @@ use std::error::Error;
 
 use self::regex::{Regex, Captures};
 
-use settings;
 use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
@@ -20,9 +19,9 @@ pub struct KarmaCommand<'a> {
 }
 
 impl<'a> KarmaCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> KarmaCommand<'a> {
+    pub fn new(command_prefix: &'a String, data_dir: &'a String) -> KarmaCommand<'a> {
         KarmaCommand {
-            karma: match KarmaCommand::read_database(&settings.data_dir, "karma") {
+            karma: match KarmaCommand::read_database(data_dir, "karma") {
                 Ok(v) => v,
                 Err(b) => {
                     error!("Error reading database: {}", b);
@@ -30,7 +29,7 @@ impl<'a> KarmaCommand<'a> {
                 }
             },
             command_prefix: command_prefix,
-            data_dir: &settings.data_dir,
+            data_dir: data_dir,
         }
     }
 

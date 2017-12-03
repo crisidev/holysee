@@ -10,7 +10,6 @@ use chan::Sender;
 use self::regex::Regex;
 use self::chrono::{Local, NaiveDateTime};
 
-use settings;
 use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
@@ -24,10 +23,10 @@ pub struct LastSeenCommand<'a> {
 impl<'a> LastSeenCommand<'a> {
     pub fn new(
         command_prefix: &'a String,
-        settings: &'a settings::Commands,
+        data_dir: &'a String,
     ) -> LastSeenCommand<'a> {
         LastSeenCommand {
-            last_seen: match LastSeenCommand::read_database(&settings.data_dir, "last_seen") {
+            last_seen: match LastSeenCommand::read_database(data_dir, "last_seen") {
                 Ok(v) => v,
                 Err(b) => {
                     error!("Error reading database: {}", b);
@@ -35,7 +34,7 @@ impl<'a> LastSeenCommand<'a> {
                 }
             },
             command_prefix,
-            data_dir: &settings.data_dir,
+            data_dir: data_dir,
         }
     }
 

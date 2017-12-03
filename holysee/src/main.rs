@@ -54,9 +54,9 @@ fn main() {
 
     info!("Starting Holysee");
 
-    let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
-    let mut last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
-    let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
+    let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands.data_dir);
+    let mut last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands.data_dir);
+    let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands.data_dir);
     let mut url_preview_command = UrlPreviewCommand::new();
     let mut relay_command = RelayMessageCommand::new(
         &settings.irc.allow_receive,

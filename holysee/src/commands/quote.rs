@@ -13,7 +13,6 @@ use self::regex::Regex;
 use self::chrono::Local;
 use self::rand::distributions::{IndependentSample, Range};
 
-use settings;
 use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
@@ -42,9 +41,9 @@ pub struct QuoteCommand<'a> {
 }
 
 impl<'a> QuoteCommand<'a> {
-    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> QuoteCommand<'a> {
+    pub fn new(command_prefix: &'a String, data_dir: &'a String) -> QuoteCommand<'a> {
         QuoteCommand {
-            quotes: match QuoteCommand::read_database(&settings.data_dir, "quote") {
+            quotes: match QuoteCommand::read_database(data_dir, "quote") {
                 Ok(v) => v,
                 Err(b) => {
                     error!("error reading database: {}", b);
@@ -52,7 +51,7 @@ impl<'a> QuoteCommand<'a> {
                 }
             },
             command_prefix,
-            data_dir: &settings.data_dir,
+            data_dir: data_dir,
         }
     }
 
@@ -248,5 +247,75 @@ to get a specific quote run\
 
     fn stop_processing(&self) -> bool {
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{Command, QuoteCommand, Message, TransportType, DestinationType};
+
+    #[test]
+    fn test_matches_message_text_ok() {
+        let prefix = String::from("!");
+        let data_dir = String::from("adir");
+        let quote = QuoteCommand::new(&prefix, &data_dir);
+        let mut msg = Message{
+            from_transport: TransportType::IRC,
+            text: String::from("!quote"),
+            from: String::from("auser"),
+            to: DestinationType::User(String::from("auser")),
+            is_from_command: false,
+        };
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!quote add aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!quote rm aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!quote 3");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!Quote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!Quote add aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!Quote rm aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("!Quote 3");
+        assert!(quote.matches_message_text(&msg));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_matches_message_text_ko() {
+        let prefix = String::from("!");
+        let data_dir = String::from("adir");
+        let quote = QuoteCommand::new(&prefix, &data_dir);
+        let mut msg = Message{
+            from_transport: TransportType::IRC,
+            text: String::from("quote"),
+            from: String::from("auser"),
+            to: DestinationType::User(String::from("auser")),
+            is_from_command: false,
+        };
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("quote add aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("quote rm aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("quote 3");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("quote ");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("Quote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("Quote add aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("Quote rm aquote");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("Quote 3");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("Quote ");
+        assert!(quote.matches_message_text(&msg));
+        msg.text = String::from("astring");
+        assert!(quote.matches_message_text(&msg));
     }
 }
