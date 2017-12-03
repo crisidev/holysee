@@ -1,4 +1,4 @@
-# holysee
+# Holysee
 
 [![Build Status](https://travis-ci.org/crisidev/holysee.svg?branch=master)](https://travis-ci.org/crisidev/holysee)
 [![codecov](https://codecov.io/gh/crisidev/holysee/branch/master/graph/badge.svg)](https://codecov.io/gh/crisidev/holysee)
@@ -50,7 +50,28 @@ enabled = [
 
 # Usage
 
-Build the bot and run it from where it can access the data dir configured in the toml file.
+## Stable-ish version
+Check [Release](https://github.com/crisidev/holysee/releases) page, download the prebuild binary (Linux only) and run it with a proper configurations structure:
+
+```
+tar xfvz holysee-$version-linux-amd64.tar.gz
+cd holysee
+edit config/local.toml
+RUST_LOG=holysee=info ./holysee
+```
+
+## Git version
+Build the bot and run it from where it can access the data dir configured in the toml file:
+
+```
+git clone https://github.com/crisidev/holysee
+cd holysee
+make
+cd holysee
+cp config/example.toml config/local.toml
+edit config/local.toml
+RUST_BACKTRACE=1 RUST_LOG=holysee=debug ./target/debug/holysee
+```
 
 ## Available Commands and Filters
 * karma
