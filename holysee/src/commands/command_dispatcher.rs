@@ -6,7 +6,6 @@ use message::Message;
 pub trait Command {
     fn execute(&mut self, &mut Message, &Sender<Message>, &Sender<Message>);
     fn get_usage(&self) -> String;
-    fn is_enabled(&self) -> bool;
     fn get_name(&self) -> String;
     fn matches_message_text(&self, message: &Message) -> bool;
     fn stop_processing(&self) -> bool;

@@ -14,7 +14,6 @@ use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
 pub struct KarmaCommand<'a> {
-    enabled: bool,
     karma: HashMap<String, i64>,
     command_prefix: &'a String,
     data_dir: &'a String,
@@ -24,7 +23,6 @@ impl<'a> KarmaCommand<'a> {
     pub fn new(
         command_prefix: &'a String,
         settings: &'a settings::Commands,
-        enabled: bool,
     ) -> KarmaCommand<'a> {
         KarmaCommand {
             karma: match KarmaCommand::read_database(&settings.data_dir, "karma") {
@@ -34,7 +32,6 @@ impl<'a> KarmaCommand<'a> {
                     HashMap::new()
                 }
             },
-            enabled,
             command_prefix: command_prefix,
             data_dir: &settings.data_dir,
         }
@@ -160,10 +157,6 @@ to increment it,
     abbasso <string> or <string>-- or fuck <string>
 to decrement it.",
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {

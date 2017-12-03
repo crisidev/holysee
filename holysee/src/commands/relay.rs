@@ -12,7 +12,6 @@ pub struct RelayMessageCommand<'a> {
     irc_allow_receive: &'a bool,
     telegram_allow_receive: &'a bool,
     command_prefix: &'a String,
-    enabled: bool,
     nicknames: &'a [NickEntry],
 }
 
@@ -21,14 +20,12 @@ impl<'a> RelayMessageCommand<'a> {
         irc_allow_receive: &'a bool,
         telegram_allow_receive: &'a bool,
         command_prefix: &'a String,
-        enabled: bool,
         nicknames: &'a [NickEntry],
     ) -> RelayMessageCommand<'a> {
         RelayMessageCommand {
             irc_allow_receive,
             telegram_allow_receive,
             command_prefix,
-            enabled,
             nicknames,
         }
     }
@@ -79,10 +76,6 @@ you will need to use\
     !tg <message>\
 for message to be delivered to the chat. Similarly, use !irc for IRC.",
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {

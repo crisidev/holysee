@@ -12,14 +12,12 @@ use commands::command_dispatcher::Command;
 pub struct UsageCommand<'a> {
     command_prefix: &'a String,
     commands: &'a HashMap<String, String>,
-    enabled: bool,
 }
 
 impl<'a> UsageCommand<'a> {
     pub fn new(
         command_prefix: &'a String,
         commands: &'a mut HashMap<String, String>,
-        enabled: bool,
     ) -> UsageCommand<'a> {
         debug!(
             "Created usage command with usages for: {:#?}",
@@ -28,7 +26,6 @@ impl<'a> UsageCommand<'a> {
         UsageCommand {
             command_prefix,
             commands,
-            enabled,
         }
     }
 }
@@ -111,10 +108,6 @@ impl<'a> Command for UsageCommand<'a> {
         Available commands: {:#?}",
             self.commands.keys().collect::<Vec<&String>>()
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {

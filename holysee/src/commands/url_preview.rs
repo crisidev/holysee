@@ -13,13 +13,11 @@ use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
-pub struct UrlPreviewCommand {
-    enabled: bool,
-}
+pub struct UrlPreviewCommand {}
 
 impl UrlPreviewCommand {
-    pub fn new(enabled: bool) -> UrlPreviewCommand {
-        UrlPreviewCommand { enabled }
+    pub fn new() -> UrlPreviewCommand {
+        UrlPreviewCommand { }
     }
 
     fn get(
@@ -110,10 +108,6 @@ impl Command for UrlPreviewCommand {
         String::from(
             "This command is not a real command, therefore it has no usage",
         )
-    }
-
-    fn is_enabled(&self) -> bool {
-        self.enabled
     }
 
     fn get_name(&self) -> String {

@@ -145,10 +145,6 @@ command. Note that all timestamps are relative to the server's timezone, usually
         )
     }
 
-    fn is_enabled(&self) -> bool {
-        self.enabled
-    }
-
     fn get_name(&self) -> String {
         String::from("last_seen")
     }
