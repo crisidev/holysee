@@ -74,12 +74,12 @@ impl<'a> QuoteCommand<'a> {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.quotes) {
                     error!("Cannot serialize file {}: {}", filename_clone, e);
-                    return false
+                    return false;
                 };
             }
             Err(e) => {
                 error!("Cannot open file {}: {}", filename_clone, e);
-                return false
+                return false;
             }
         };
         true
@@ -277,7 +277,9 @@ mod tests {
     fn test_read_database() {
         assert!(QuoteCommand::read_database("adir", "quote.json").is_err());
         let data_dir = TempDir::new("holysee_quote").unwrap();
-        assert!(QuoteCommand::read_database(data_dir.path().to_str().unwrap(), "quote.json").is_err());
+        assert!(
+            QuoteCommand::read_database(data_dir.path().to_str().unwrap(), "quote.json").is_err()
+        );
     }
 
     #[test]
@@ -303,47 +305,38 @@ mod tests {
             is_from_command: false,
         };
 
-        // successes
-        msg.text = String::from("!quote");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!quote add aquote");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!quote rm aquote");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!quote 3");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!Quote");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!Quote add aquote");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!Quote rm aquote");
-        assert!(quote.matches_message_text(&msg));
-        msg.text = String::from("!Quote 3");
-        assert!(quote.matches_message_text(&msg));
+        let success = [
+            "!quote",
+            "!quote add aquote",
+            "!quote rm aquote",
+            "!quote 3",
+            "!Quote",
+            "!Quote add aquote",
+            "!Quote rm aquote",
+            "!Quote 3",
+        ];
+        for text in success.iter() {
+            msg.text = String::from(*text);
+            assert!(quote.matches_message_text(&msg));
+        }
 
-        // failures
-        msg.text = String::from("quote");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("quote add aquote");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("quote rm aquote");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("quote 3");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("quote ");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("Quote");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("Quote add aquote");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("Quote rm aquote");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("Quote 3");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("Quote ");
-        assert!(!quote.matches_message_text(&msg));
-        msg.text = String::from("astring");
-        assert!(!quote.matches_message_text(&msg));
+        let failures = [
+            "quote",
+            "quote add aquote",
+            "quote rm aquote",
+            "quote 3",
+            "quote ",
+            "Quote",
+            "Quote add aquote",
+            "Quote rm aquote",
+            "Quote 3",
+            "Quote ",
+            "astring",
+        ];
+        for text in failures.iter() {
+            msg.text = String::from(*text);
+            assert!(!quote.matches_message_text(&msg));
+        }
     }
 
     #[test]
@@ -351,17 +344,26 @@ mod tests {
         let prefix = String::from("!");
         let data_dir = TempDir::new("holysee_quote").unwrap();
         let mut quote = QuoteCommand::new(&prefix, data_dir.path().to_str().unwrap());
-        assert!(quote.handle("!quote", "auser") == "no quotes in the database");
-        assert!(quote.handle("!quote add aquote", "auser") == "quote #0 \"aquote - auser\" added");
-        assert!(quote.handle("!quote add aquote", "auser") == "quote #0 \"aquote - auser\" already added");
-        assert!(quote.handle("!quote", "auser") == "quote #0 \"aquote - auser\"");
-        assert!(quote.handle("!quote 0", "auser") == "quote #0 \"aquote - auser\"");
-        assert!(quote.handle("!quote 1", "auser") == "quote #1 does not exist");
-        assert!(quote.handle("!quote rm aquote", "auser") == "quote #0 \"aquote - auser\" removed");
-        assert!(quote.handle("!quote rm aquote", "auser") == "quote \"aquote\" does not exist");
-        assert!(quote.handle("!quote rm 0", "auser") == "quote #0 does not exist");
-        assert!(quote.handle("quote", "auser") == "command \"quote\" not recognized");
-        assert!(quote.handle("Quote", "auser") == "command \"Quote\" not recognized");
-        assert!(quote.handle("astring", "auser") == "command \"astring\" not recognized");
+
+        let cases = [
+            ["!quote", "no quotes in the database"],
+            ["!quote add aquote", "quote #0 \"aquote - auser\" added"],
+            [
+                "!quote add aquote",
+                "quote #0 \"aquote - auser\" already added",
+            ],
+            ["!quote", "quote #0 \"aquote - auser\""],
+            ["!quote 0", "quote #0 \"aquote - auser\""],
+            ["!quote 1", "quote #1 does not exist"],
+            ["!quote rm aquote", "quote #0 \"aquote - auser\" removed"],
+            ["!quote rm aquote", "quote \"aquote\" does not exist"],
+            ["!quote rm 0", "quote #0 does not exist"],
+            ["quote", "command \"quote\" not recognized"],
+            ["Quote", "command \"Quote\" not recognized"],
+            ["astring", "command \"astring\" not recognized"],
+        ];
+        for case in cases.iter() {
+            assert!(quote.handle(case[0], "auser") == *case[1]);
+        }
     }
 }

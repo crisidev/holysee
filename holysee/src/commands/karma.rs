@@ -44,19 +44,22 @@ impl<'a> KarmaCommand<'a> {
         })
     }
 
-    fn write_database(&self) {
-        match OpenOptions::new().write(true).truncate(true).open(format!(
-            "{}/{}.json",
-            self.data_dir,
-            &self.get_name()
-        )) {
+    fn write_database(&self) -> bool {
+        let filename = format!("{}/{}.json", self.data_dir, &self.get_name());
+        let filename_clone = filename.clone();
+        match OpenOptions::new().write(true).truncate(true).open(filename) {
             Ok(file) => {
                 if let Err(e) = serde_json::to_writer(file, &self.karma) {
-                    error!("Cannot serialize file: {}", e)
+                    error!("Cannot serialize file {}: {}", filename_clone, e);
+                    return false;
                 };
             }
-            Err(e) => error!("Cannot open file: {}", e),
+            Err(e) => {
+                error!("Cannot open file {}: {}", filename_clone, e);
+                return false;
+            }
         };
+        true
     }
 
     fn get(&self, key: &str) -> String {
@@ -80,6 +83,31 @@ impl<'a> KarmaCommand<'a> {
         }
         karma_irc
     }
+
+    fn handle(&mut self, text: &str) -> String {
+        let re_get = Regex::new(
+            format!(r"^(?:{})(?:karma|riguardo)\s+(.+)$", self.command_prefix).as_ref(),
+        ).unwrap();
+        let re_increase = Regex::new(r"^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$").unwrap();
+        let re_decrease = Regex::new(r"^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$").unwrap();
+
+        let mut result = String::new();
+
+        // COMMAND HANDLING
+        for cap in re_get.captures_iter(text) {
+            debug!("Karma get captures {:#?}", cap);
+            result = self.get(&cap[1]);
+        }
+        for cap in re_increase.captures_iter(text) {
+            debug!("Karma increase captures {:#?}", cap);
+            result = self.update(&cap, 1);
+        }
+        for cap in re_decrease.captures_iter(text) {
+            debug!("Karma decrease captures {:#?}", cap);
+            result = self.update(&cap, -1);
+        }
+        result
+    }
 }
 
 impl<'a> Command for KarmaCommand<'a> {
@@ -89,30 +117,9 @@ impl<'a> Command for KarmaCommand<'a> {
         to_irc: &Sender<Message>,
         to_telegram: &Sender<Message>,
     ) {
-        let re_get = Regex::new(
-            format!(r"^(?:{})(?:karma|riguardo)\s+(.+)$", self.command_prefix).as_ref(),
-        ).unwrap();
-        let re_increase = Regex::new(r"^[vV]iva\s+(.*)$|^[hH]urrah\s+(.*)$|^(\w+)\+\+$").unwrap();
-        let re_decrease = Regex::new(r"^[aA]bbasso\s+(.*)$|^[fF]uck\s+(.*)$|^(\w+)\-\-$").unwrap();
-
-        let mut karma_irc = String::new();
-
-        // COMMAND HANDLING
-        for cap in re_get.captures_iter(&msg.text) {
-            debug!("Karma get captures {:#?}", cap);
-            karma_irc = self.get(&cap[1]);
-        }
-        for cap in re_increase.captures_iter(&msg.text) {
-            debug!("Karma increase captures {:#?}", cap);
-            karma_irc = self.update(&cap, 1);
-        }
-        for cap in re_decrease.captures_iter(&msg.text) {
-            debug!("Karma decrease captures {:#?}", cap);
-            karma_irc = self.update(&cap, -1);
-        }
-
-        // SEND MESSAGES
+        let karma_irc = self.handle(&msg.text);
         let karma_telegram = karma_irc.clone();
+
         let destination = match msg.to {
             DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
             DestinationType::User(_) => DestinationType::User(msg.from.clone()),
@@ -120,6 +127,7 @@ impl<'a> Command for KarmaCommand<'a> {
         };
         let destination_irc: DestinationType = DestinationType::klone(&destination);
         let destination_telegram: DestinationType = DestinationType::klone(&destination);
+
         match msg.from_transport {
             TransportType::IRC => {
                 to_irc.send(Message::new(
@@ -172,5 +180,103 @@ to decrement it.",
 
     fn stop_processing(&self) -> bool {
         true
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    extern crate tempdir;
+
+    use self::tempdir::TempDir;
+
+    use super::{Command, KarmaCommand, Message, TransportType, DestinationType};
+
+    #[test]
+    fn test_read_database() {
+        assert!(KarmaCommand::read_database("adir", "karma.json").is_err());
+        let data_dir = TempDir::new("holysee_karma").unwrap();
+        assert!(
+            KarmaCommand::read_database(data_dir.path().to_str().unwrap(), "karma.json").is_err()
+        );
+    }
+
+    #[test]
+    fn test_write_database() {
+        // TODO: handle also successful case which now returns
+        // Cannot open file /var/folders/xj/8kykppps3b9d79m8g40nbyz9p52bt_/T/holysee_quote.C6rvI2j6eqIa/quote.json: No such file or directory (os error 2)
+        // Cannot open file /var/folders/xj/8kykppps3b9d79m8g40nbyz9p52bt_/T/holysee_quote.C6rvI2j6eqIa/quote.json: No such file or directory (os error 2)
+        let prefix = String::from("!");
+        let karma = KarmaCommand::new(&prefix, "adir");
+        assert!(!karma.write_database());
+    }
+
+    #[test]
+    fn test_matches_message_text() {
+        let prefix = String::from("!");
+        let data_dir = String::from("adir");
+        let karma = KarmaCommand::new(&prefix, &data_dir);
+        let mut msg = Message {
+            from_transport: TransportType::IRC,
+            text: String::from("!karma"),
+            from: String::from("auser"),
+            to: DestinationType::User(String::from("auser")),
+            is_from_command: false,
+        };
+
+        let success = [
+            "!karma something",
+            "!riguardo something",
+            "viva something",
+            "hurrah something",
+            "something++",
+            "abbasso something",
+            "fuck something",
+            "something--",
+            "Abbasso something",
+        ];
+        for text in success.iter() {
+            msg.text = String::from(*text);
+            assert!(karma.matches_message_text(&msg));
+        }
+
+        let failures = [
+            "!karma",
+            "!riguardo",
+            "karma",
+            "karma ",
+            "hurra ",
+            "fck ",
+            "viv something",
+            "something ++",
+            "something + +",
+            "abbaso something",
+            "something-",
+            "something- -",
+            "Vva somethong",
+            "Abasso something",
+        ];
+        for text in failures.iter() {
+            msg.text = String::from(*text);
+            assert!(!karma.matches_message_text(&msg));
+        }
+    }
+
+    #[test]
+    fn test_handle() {
+        let prefix = String::from("!");
+        let data_dir = TempDir::new("holysee_karma").unwrap();
+        let mut karma = KarmaCommand::new(&prefix, data_dir.path().to_str().unwrap());
+
+        let cases = [
+            ["!karma something", "no karma for \"something\""],
+            ["something++", "karma for \"something\": 1"],
+            ["viva something", "karma for \"something\": 2"],
+            ["something--", "karma for \"something\": 1"],
+            ["abbasso something", "karma for \"something\": 0"],
+            ["!karma something", "karma for \"something\": 0"],
+        ];
+        for case in cases.iter() {
+            assert!(karma.handle(case[0]) == *case[1]);
+        }
     }
 }
