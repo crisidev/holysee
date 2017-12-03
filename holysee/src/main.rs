@@ -34,13 +34,16 @@ use commands::usage::UsageCommand;
 fn main() {
     pretty_env_logger::init().unwrap();
     let mut usage_hashmap: HashMap<String, String> = HashMap::new();
-    let settings = match Settings::new(true) {
+    let mut settings = match Settings::new(true) {
         Ok(s) => s,
         Err(e) => {
             error!("Error accessing config file: {}", e);
             process::exit(1)
         }
     };
+
+    // relay command is always enabled
+    Settings::enable_relay_command(&mut settings);
 
     // TODO: fix this hardcoded value
     let (to_irc, from_irc) = chan::sync(100);
