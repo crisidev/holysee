@@ -20,10 +20,7 @@ pub struct KarmaCommand<'a> {
 }
 
 impl<'a> KarmaCommand<'a> {
-    pub fn new(
-        command_prefix: &'a String,
-        settings: &'a settings::Commands,
-    ) -> KarmaCommand<'a> {
+    pub fn new(command_prefix: &'a String, settings: &'a settings::Commands) -> KarmaCommand<'a> {
         KarmaCommand {
             karma: match KarmaCommand::read_database(&settings.data_dir, "karma") {
                 Ok(v) => v,

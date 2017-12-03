@@ -13,15 +13,28 @@ pub trait Command {
 
 pub struct CommandDispatcher<'a> {
     commands: Vec<&'a mut Command>,
+    enabled_commands: &'a[String],
 }
 
 impl<'a> CommandDispatcher<'a> {
-    pub fn new() -> CommandDispatcher<'a> {
-        CommandDispatcher { commands: vec![] }
+    pub fn new(enabled_commands: &'a[String]) -> CommandDispatcher<'a> {
+        CommandDispatcher { commands: vec![], enabled_commands}
+    }
+
+    pub fn is_command_enabled(&self, command: &str) -> bool {
+        self.enabled_commands.into_iter().any(|x| x == command)
     }
 
     pub fn register(&mut self, cmd: &'a mut Command) {
-        self.commands.push(cmd);
+        if self.is_command_enabled(&cmd.get_name()) {
+            info!("Registering new command {}", cmd.get_name());
+            self.commands.push(cmd);
+        } else {
+            warn!(
+                "Command {} is disabled in settings, skipping registration",
+                cmd.get_name()
+            );
+        }
     }
 
     pub fn execute(

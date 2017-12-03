@@ -17,13 +17,13 @@ pub struct UrlPreviewCommand {}
 
 impl UrlPreviewCommand {
     pub fn new() -> UrlPreviewCommand {
-        UrlPreviewCommand { }
+        UrlPreviewCommand {}
     }
 
     fn get(
-        url: &String,
+        url: &str,
         destination: &DestinationType,
-        from: &String,
+        from: &str,
         to_irc: &Sender<Message>,
         to_telegram: &Sender<Message>,
     ) {
@@ -40,7 +40,7 @@ impl UrlPreviewCommand {
                     println!("{:#?}", node);
                     let destination_inner = match *destination {
                         DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
-                        DestinationType::User(_) => DestinationType::User(from.clone()),
+                        DestinationType::User(_) => DestinationType::User(from.to_string()),
                         DestinationType::Unknown => {
                             panic!("Serious bug in url_preview command handler")
                         }

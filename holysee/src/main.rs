@@ -52,8 +52,7 @@ fn main() {
     info!("Starting Holysee");
 
     let mut karma_command = KarmaCommand::new(&settings.command_prefix, &settings.commands);
-    let mut last_seen_command =
-        LastSeenCommand::new(&settings.command_prefix, &settings.commands, true);
+    let mut last_seen_command = LastSeenCommand::new(&settings.command_prefix, &settings.commands);
     let mut quote_command = QuoteCommand::new(&settings.command_prefix, &settings.commands);
     let mut url_preview_command = UrlPreviewCommand::new();
     let mut relay_command = RelayMessageCommand::new(
@@ -79,7 +78,7 @@ fn main() {
         url_preview_command.get_usage().clone(),
     );
     let mut usage_command = UsageCommand::new(&settings.command_prefix, &mut usage_hashmap);
-    let mut command_dispatcher = CommandDispatcher::new();
+    let mut command_dispatcher = CommandDispatcher::new(&settings.commands.enabled);
 
     // FILTERS
     command_dispatcher.register(&mut last_seen_command);
