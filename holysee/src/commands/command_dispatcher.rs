@@ -8,7 +8,7 @@ pub trait Command {
     fn get_usage(&self) -> String;
     fn get_name(&self) -> String;
     fn matches_message_text(&self, message: &Message) -> bool;
-    fn stop_processing(&self) -> bool;
+    fn stop_processing(&self, message: &Message) -> bool;
 }
 
 pub struct CommandDispatcher<'a> {
@@ -50,7 +50,7 @@ impl<'a> CommandDispatcher<'a> {
             if command.matches_message_text(msg) {
                 info!("Executing command {}", command.get_name());
                 command.execute(msg, irc_sender, tg_sender);
-                if command.stop_processing() {
+                if command.stop_processing(msg) {
                     debug!("Command {} stop processing", command.get_name());
                     break;
                 }

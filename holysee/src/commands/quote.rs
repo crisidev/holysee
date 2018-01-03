@@ -260,7 +260,7 @@ to get a specific quote run\
         re.is_match(&message.text)
     }
 
-    fn stop_processing(&self) -> bool {
+    fn stop_processing(&self, _: &Message) -> bool {
         true
     }
 }

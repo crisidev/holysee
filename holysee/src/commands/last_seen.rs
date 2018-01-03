@@ -159,8 +159,10 @@ command. Note that all timestamps are relative to the server's timezone, usually
         true
     }
 
-    fn stop_processing(&self) -> bool {
-        false
+    fn stop_processing(&self, msg: &Message) -> bool {
+        // TODO abstract the "seen" string to another so that we do not duplicate the changes
+        let pattern = format!("{}seen", &self.command_prefix);
+        msg.text.contains(&pattern)
     }
 }
 

@@ -118,7 +118,7 @@ impl Command for UrlPreviewCommand {
         true
     }
 
-    fn stop_processing(&self) -> bool {
+    fn stop_processing(&self, _: &Message) -> bool {
         false
     }
 }
