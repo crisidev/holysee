@@ -62,12 +62,33 @@ impl Message {
         }
     }
 
+    fn nickname_needs_conversion(&self, irc_nick: &str, telegram_nick: &str) -> bool {
+        let nick = match self.from_transport {
+            TransportType::IRC => {
+                irc_nick
+            },
+            TransportType::Telegram => {
+                telegram_nick
+            }
+        };
+        let column_mention = format!("{}:", nick);
+        let at_mention = format!("@{}", nick);
+        let beginning_mention = format!("{} ", nick);
+        let ending_mention = format!(" {}", nick);
+        let bare_mention = format!(" {} ", nick);
+        self.text.contains(&column_mention) ||
+            self.text.contains(&at_mention) ||
+            self.text.contains(&beginning_mention) ||
+            self.text.contains(&ending_mention) ||
+            self.text.contains(&bare_mention)
+    }
+
     // TODO: refactor this interface to not depend on settings::NickEntry
     pub fn convert_nicknames(&mut self, nicknames: &[NickEntry]) {
         for nick_map in nicknames {
             match self.from_transport {
                 TransportType::IRC => {
-                    if self.text.contains(&nick_map.irc) {
+                    if self.nickname_needs_conversion( &nick_map.irc, &nick_map.telegram) {
                         debug!(
                             "Converting current irc from {} to telegram {}",
                             self.from,
@@ -77,7 +98,7 @@ impl Message {
                     }
                 }
                 TransportType::Telegram => {
-                    if self.text.contains(&nick_map.telegram) {
+                    if self.nickname_needs_conversion(&nick_map.irc, &nick_map.telegram) {
                         debug!(
                             "Converting current telegram from {} to irc {}",
                             self.from,
@@ -88,5 +109,34 @@ impl Message {
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::Message;
+    use super::TransportType;
+    use super::DestinationType;
+
+    #[test]
+    fn test_nickname_needs_conversion() {
+        // TODO fix this madness
+        // IRC message cases
+        assert_eq!(Message::new(TransportType::IRC, String::from("nickname: some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::IRC, String::from("@nickname some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::IRC, String::from("@nickname: some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::IRC, String::from("http://some.site.com/~nickname/file.html"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), false);
+        assert_eq!(Message::new(TransportType::IRC, String::from("nickname some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::IRC, String::from("mentioned nickname in a conversation"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::IRC, String::from("mentioned @nickname in a conversation"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+
+        // TELEGRAM message cases
+        assert_eq!(Message::new(TransportType::Telegram, String::from("tg_nickname: some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), false);
+        assert_eq!(Message::new(TransportType::Telegram, String::from("@tg_nickname some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::Telegram, String::from("@tg_nickname: some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
+        assert_eq!(Message::new(TransportType::Telegram, String::from("http://some.site.com/~tg_nickname/file.html"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), false);
+        assert_eq!(Message::new(TransportType::Telegram, String::from("tg_nickname some message"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), false);
+        assert_eq!(Message::new(TransportType::Telegram, String::from("mentioned tg_nickname in a conversation"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), false);
+        assert_eq!(Message::new(TransportType::Telegram, String::from("mentioned @tg_nickname in a conversation"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).nickname_needs_conversion("nickname", "@tg_nickname"), true);
     }
 }
