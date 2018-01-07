@@ -60,7 +60,10 @@ fn main() {
         LastSeenCommand::new(&settings.command_prefix, &settings.commands.data_dir);
     let mut quote_command =
         QuoteCommand::new(&settings.command_prefix, &settings.commands.data_dir);
-    let mut url_preview_command = UrlPreviewCommand::new();
+    let mut url_preview_command = UrlPreviewCommand::new(
+        settings.irc.allow_receive,
+        settings.telegram.allow_receive,
+    );
     let mut relay_command = RelayMessageCommand::new(
         &settings.irc.allow_receive,
         &settings.telegram.allow_receive,

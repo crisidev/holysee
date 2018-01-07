@@ -13,11 +13,17 @@ use message::{Message, TransportType, DestinationType};
 use commands::command_dispatcher::Command;
 
 #[derive(Debug)]
-pub struct UrlPreviewCommand {}
+pub struct UrlPreviewCommand {
+    telegram_allow_receive: bool,
+    irc_allow_receive: bool,
+}
 
 impl UrlPreviewCommand {
-    pub fn new() -> UrlPreviewCommand {
-        UrlPreviewCommand {}
+    pub fn new(irc_allow_receive: bool, telegram_allow_receive: bool) -> UrlPreviewCommand {
+        UrlPreviewCommand {
+            telegram_allow_receive,
+            irc_allow_receive,
+        }
     }
 
     fn get(
@@ -26,6 +32,8 @@ impl UrlPreviewCommand {
         from: &str,
         to_irc: &Sender<Message>,
         to_telegram: &Sender<Message>,
+        irc_allow_receive: bool,
+        telegram_allow_receive: bool,
     ) {
         let result = reqwest::get(url);
         match result {
@@ -54,20 +62,28 @@ impl UrlPreviewCommand {
                             DestinationType::klone(&destination_inner);
                         let destination_telegram: DestinationType =
                             DestinationType::klone(&destination_inner);
-                        to_irc.send(Message::new(
-                            TransportType::Telegram,
-                            title_irc.to_owned(),
-                            String::from("UrlPreviewCommand"),
-                            destination_irc,
-                            true,
-                        ));
-                        to_telegram.send(Message::new(
-                            TransportType::IRC,
-                            title_telegram.to_owned(),
-                            String::from("UrlPreviewCommand"),
-                            destination_telegram,
-                            true,
-                        ));
+                        if irc_allow_receive {
+                            to_irc.send(Message::new(
+                                TransportType::Telegram,
+                                title_irc.to_owned(),
+                                String::from("UrlPreviewCommand"),
+                                destination_irc,
+                                true,
+                            ));
+                        } else {
+                            debug!("Not sending preview to irc due to allow_receive being {}", irc_allow_receive);
+                        }
+                        if telegram_allow_receive {
+                            to_telegram.send(Message::new(
+                                TransportType::IRC,
+                                title_telegram.to_owned(),
+                                String::from("UrlPreviewCommand"),
+                                destination_telegram,
+                                true,
+                            ));
+                        } else {
+                            debug!("Not sending preview to telegram due to allow_receive being {}", telegram_allow_receive);
+                        }
                     });
                 }
             }
@@ -91,6 +107,8 @@ impl Command for UrlPreviewCommand {
 
         // COMMAND HANDLING
         let message_text = msg.text.to_owned();
+        let irc_allow_receive = self.irc_allow_receive;
+        let telegram_allow_receive = self.telegram_allow_receive;
         for cap in re.captures_iter(&message_text) {
             let url = String::from(&cap[1]);
             let to_irc_clone = to_irc.clone();
@@ -99,7 +117,7 @@ impl Command for UrlPreviewCommand {
             let from: String = msg.from.clone();
             debug!("Previewing url {}", url);
             thread::spawn(move || {
-                UrlPreviewCommand::get(&url, &destination, &from, &to_irc_clone, &to_telegram_clone)
+                UrlPreviewCommand::get(&url, &destination, &from, &to_irc_clone, &to_telegram_clone, irc_allow_receive, telegram_allow_receive)
             });
         }
     }
