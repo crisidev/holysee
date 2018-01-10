@@ -54,7 +54,7 @@ impl Message {
     // TODO: sanitize this senseless abuse
     // TODO: handle symbol command for command name
     pub fn strip_command(&self, command_prefix: &str) -> String {
-        let re = Regex::new(format!(r"({})\w+\s", command_prefix).as_ref()).unwrap();
+        let re = Regex::new(format!(r"^({})\w+\s", command_prefix).as_ref()).unwrap();
         if self.is_from_command {
             format!("{}", re.replace_all(&self.text, ""))
         } else {
@@ -117,6 +117,18 @@ mod tests {
     use super::Message;
     use super::TransportType;
     use super::DestinationType;
+
+    #[test]
+    fn test_strip_command() {
+        // from command
+        assert_eq!(Message::new(TransportType::IRC, String::from("!command at the beginning of line"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), true).strip_command("!"), String::from("at the beginning of line"));
+        // not from command, so contains the nickname
+        assert_eq!(Message::new(TransportType::IRC, String::from("!command at the beginning of line"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).strip_command("!"), String::from("nickname: at the beginning of line"));
+        // ironic use of ! from command
+        assert_eq!(Message::new(TransportType::IRC, String::from("at the !beginning of line"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), true).strip_command("!"), String::from("at the !beginning of line"));
+        // ironic use of ! not from command, so contains the nickname
+        assert_eq!(Message::new(TransportType::IRC, String::from("at the !beginning of line"), String::from("nickname"), DestinationType::Channel(String::from("#somechan")), false).strip_command("!"), String::from("nickname: at the !beginning of line"));
+    }
 
     #[test]
     fn test_nickname_needs_conversion() {
