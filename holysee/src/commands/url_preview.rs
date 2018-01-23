@@ -18,6 +18,8 @@ pub struct UrlPreviewCommand {
     irc_allow_receive: bool,
 }
 
+const NO_TITLE_FOUND_MESSAGE: &str = "No title found";
+
 impl UrlPreviewCommand {
     pub fn new(irc_allow_receive: bool, telegram_allow_receive: bool) -> UrlPreviewCommand {
         UrlPreviewCommand {
@@ -44,47 +46,50 @@ impl UrlPreviewCommand {
                     Err(e) => error!("Error reading data from {}: {}", url, e),
                 }
                 let document = Document::from(buf.as_ref());
-                for node in document.find(Name("title")) {
-                    println!("{:#?}", node);
-                    let destination_inner = match *destination {
-                        DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
-                        DestinationType::User(_) => DestinationType::User(from.to_string()),
-                        DestinationType::Unknown => {
-                            panic!("Serious bug in url_preview command handler")
+                let title_irc = match document.find(Name("title")).nth(0) {
+                    Some(n) => {
+                        match n.children().nth(0) {
+                            Some(c) => c.as_text().unwrap_or(NO_TITLE_FOUND_MESSAGE),
+                            None => NO_TITLE_FOUND_MESSAGE,
                         }
-                    };
-                    node.children().for_each(move |x| {
-                        // SEND MESSAGES
-                        let title_irc = x.as_text().unwrap();
-                        debug!("Extracted url: {}", title_irc);
-                        let title_telegram = title_irc;
-                        let destination_irc: DestinationType =
-                            DestinationType::klone(&destination_inner);
-                        let destination_telegram: DestinationType =
-                            DestinationType::klone(&destination_inner);
-                        if irc_allow_receive {
-                            to_irc.send(Message::new(
-                                TransportType::Telegram,
-                                title_irc.to_owned(),
-                                String::from("UrlPreviewCommand"),
-                                destination_irc,
-                                true,
-                            ));
-                        } else {
-                            debug!("Not sending preview to irc due to allow_receive being {}", irc_allow_receive);
-                        }
-                        if telegram_allow_receive {
-                            to_telegram.send(Message::new(
-                                TransportType::IRC,
-                                title_telegram.to_owned(),
-                                String::from("UrlPreviewCommand"),
-                                destination_telegram,
-                                true,
-                            ));
-                        } else {
-                            debug!("Not sending preview to telegram due to allow_receive being {}", telegram_allow_receive);
-                        }
-                    });
+                    },
+                    None => NO_TITLE_FOUND_MESSAGE
+                };
+                let destination_inner = match *destination {
+                    DestinationType::Channel(ref c) => DestinationType::Channel(c.clone()),
+                    DestinationType::User(_) => DestinationType::User(from.to_string()),
+                    DestinationType::Unknown => {
+                        panic!("Serious bug in url_preview command handler")
+                    }
+                };
+                // SEND MESSAGE
+                debug!("Extracted url: {}", title_irc);
+                let title_telegram = title_irc;
+                let destination_irc: DestinationType =
+                    DestinationType::klone(&destination_inner);
+                let destination_telegram: DestinationType =
+                    DestinationType::klone(&destination_inner);
+                if irc_allow_receive {
+                    to_irc.send(Message::new(
+                        TransportType::Telegram,
+                        title_irc.to_owned(),
+                        String::from("UrlPreviewCommand"),
+                        destination_irc,
+                        true,
+                    ));
+                } else {
+                    debug!("Not sending preview to irc due to allow_receive being {}", irc_allow_receive);
+                }
+                if telegram_allow_receive {
+                    to_telegram.send(Message::new(
+                        TransportType::IRC,
+                        title_telegram.to_owned(),
+                        String::from("UrlPreviewCommand"),
+                        destination_telegram,
+                        true,
+                    ));
+                } else {
+                    debug!("Not sending preview to telegram due to allow_receive being {}", telegram_allow_receive);
                 }
             }
             Err(e) => {
