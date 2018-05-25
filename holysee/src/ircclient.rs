@@ -23,7 +23,12 @@ pub mod client {
             match current {
                 Some(msg) => {
                     let message_text: &String = &msg.text;
-                    let mut lines: Vec<&str> = message_text.split('\n').collect();
+                    let chars: Vec<char> = message_text.chars().collect();
+                    // chunk the lines in blocks up to 100 chars and re-convert to
+                    // list of strings
+                    let mut lines = chars.chunks(100)
+                        .map(|chunk| chunk.iter().collect::<String>())
+                        .collect::<Vec<_>>();
                     let lines_len = lines.len();
                     let mut send_delay_ms: u64;
                     if lines_len > 30 {
@@ -31,12 +36,14 @@ pub mod client {
                         error!("{}", error);
                         // overwrite the lines vector so that we only send the notification
                         // of the missed message to the destination
-                        lines = vec![&error];
+                        lines = vec![error];
                         send_delay_ms = 0;
-                    } else if lines_len > 10 {
-                        send_delay_ms = 250;
+                    } else if lines_len > 5 {
+                        // empirically determined by checking the flood rates of the most common
+                        // irc networks: freenode, oftc and quakenet
+                        send_delay_ms = 1000;
                     } else {
-                        send_delay_ms = 100;
+                        send_delay_ms = 500;
                     }
                     // skip the delay if we are sending to a single user
                     let to_user: bool = match msg.to {
@@ -53,11 +60,16 @@ pub mod client {
                             false
                         }
                     };
-                    for line in lines {
+                    for mut line in lines {
+                        // FIXME: there sometimes is a panic in the irc library if the
+                        // message contains a "\n", so replace it with a "."
+                        if line.contains("\n") {
+                            line = line.replace("\n", ".");
+                        }
                         // if the message comes from any command always send it as notice
                         // unless the destination is a user, in that case send via privmsg
                         if msg.is_from_command && !to_user {
-                            match server.send_notice(&destination, line) {
+                            match server.send_notice(&destination, &line) {
                                 Ok(_) => {
                                     info!("IRC NOTICE sent");
                                 }
@@ -66,7 +78,7 @@ pub mod client {
                                 }
                             }
                         } else {
-                            match server.send_privmsg(&destination, line) {
+                            match server.send_privmsg(&destination, &line) {
                                 Ok(_) => {
                                     info!("IRC PRIVMSG sent");
                                 }
