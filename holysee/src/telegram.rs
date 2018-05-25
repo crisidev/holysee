@@ -23,7 +23,7 @@ pub mod client {
             let current: Option<Message> = from_main_queue.recv();
             match current {
                 Some(msg) => {
-                    match core.run(api.send(SendMessage::new(chat, msg.text.as_ref()))) {
+                    match core.run(api.send(SendMessage::new(chat, msg.text))) {
                         Ok(_) => info!("Telegram message sent"),
                         Err(e) => error!("Sending message failed for reason: {:#?}", e),
                     };
