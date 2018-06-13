@@ -26,7 +26,7 @@ pub mod client {
                     let chars: Vec<char> = message_text.chars().collect();
                     // chunk the lines in blocks up to 100 chars and re-convert to
                     // list of strings
-                    let mut lines = chars.chunks(100)
+                    let mut lines = chars.chunks(200)
                         .map(|chunk| chunk.iter().collect::<String>())
                         .collect::<Vec<_>>();
                     let lines_len = lines.len();
