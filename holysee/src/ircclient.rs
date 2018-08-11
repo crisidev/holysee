@@ -117,13 +117,24 @@ pub mod client {
                         } else {
                             DestinationType::User(source)
                         };
-                        to_main_queue.send(Message::new(
-                            TransportType::IRC,
-                            message_text,
-                            srcnick,
-                            destination,
-                            false,
-                        ));
+                        /* The freenode network uses a bot (freenode-connect) to handle statistics
+                         * and bot abuse. Each time a new client connects a CTCP VERSION command
+                         * should be sent, but _not_ as a CTCP but as a PRIVMSG. This is a non-standard
+                         * behaviour that, according to freenode help channel, is maintained to
+                         * try and catch non-standard bots. 
+                         */
+                        if message_text.contains("\u{1}VERSION\u{1}") {
+                            debug!("freenode-connection VERSION workaround");
+                            server.send_privmsg("freenode-connect", "holysee bot 0.1");
+                        } else {
+                            to_main_queue.send(Message::new(
+                                TransportType::IRC,
+                                message_text,
+                                srcnick,
+                                destination,
+                                false,
+                            ));
+                        }
                     }
                     irc::proto::Command::INVITE(_, channel) => {
                         debug!("Got invite for channel: {}", channel);
